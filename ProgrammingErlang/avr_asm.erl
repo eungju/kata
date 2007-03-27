@@ -237,7 +237,9 @@ register_map_test() ->
     ?assert(0 =:= register_map(r0)).
 
 register_map_badarg_test() ->
-    ?assertThrow({badarg, r32}, register_map(r32)).
+    ?assertThrow({badarg, r32}, register_map(r32)),
+    ?assertThrow({badarg, ab}, register_map(ab)).
+
 pc_relative_addr_test() ->
     ?assert(0 == pc_relative_addr(4, 5)).
 
