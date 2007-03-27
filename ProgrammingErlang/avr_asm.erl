@@ -1,7 +1,6 @@
 -module(avr_asm).
--export([asm/1, example_1/0]).
+-export([asm/1]).
 -include_lib("eunit/include/eunit.hrl").
--import(dict).
 
 %	MNEMONIC_NOP = 0,  //          0000 0000 0000 0000
 %	MNEMONIC_SEC,      //          1001 0100 0000 1000
@@ -159,10 +158,16 @@ code({M, S, K}) ->
 	brbc -> <<2#111101:6,K:7,S:3>>
     end.
 
-eval_expr(Expr, _) when is_integer(Expr) ->
-    Expr;
-eval_expr(Expr, D) when is_atom(Expr) ->
-    dict:fetch(Expr, D).
+register_map(RegName) ->
+    F = fun(N) -> {list_to_atom([$r|integer_to_list(N)]), N} end,
+    Regs = dict:from_list(lists:map(F, lists:seq(0, 31))),
+    Has = dict:is_key(RegName, Regs),
+    if
+	Has =:= true ->
+	    dict:fetch(RegName, Regs);
+	true ->
+	    throw({badarg, RegName})
+    end.
 
 label_mark(Name, Addr, D) ->
     dict:store(Name, Addr, D).
@@ -174,9 +179,6 @@ pass_1(A, L) ->
 
 pass_1(_, Symbols, Passed, []) ->
     {Symbols, lists:reverse(Passed)};
-pass_1(A, Symbols, Passed, [{def,X,Y}|T]) ->
-    NewSymbols = dict:store(X, eval_expr(Y, Symbols), Symbols),
-    pass_1(A, NewSymbols, Passed, T);
 pass_1(_, Symbols, Passed, [{org,Address}|T]) ->
     pass_1(Address, Symbols, Passed, T);
 pass_1(A, Symbols, Passed, [{label,Label}|T]) ->
@@ -195,9 +197,9 @@ pass_2(Symbols, {A, I}) ->
 	{M, S, K} when M=:=brbs; M=:=brbc ->
 	    {M, S, pc_relative_addr(A, label_addr(K, Symbols))};
 	{M, Rd, K} when M=:=ldi ->
-	    {M, eval_expr(Rd, Symbols), eval_expr(K, Symbols)};
+	    {M, register_map(Rd), K};
 	{M, Rd} when M=:=dec ->
-	    {M, eval_expr(Rd, Symbols)};
+	    {M, register_map(Rd)};
 	{M, K} when M=:=brne ->
 	    {M, pc_relative_addr(A, label_addr(K, Symbols))}
     end,
@@ -216,21 +218,9 @@ asm(L) ->
     {Symbols, P1} = pass_1(0, tn13def(), [], L),
     pass_2(Symbols, P1).
 
--define(temp1, r17).
--define(temp2, r18).
-
-example_1() ->
-    asm([
-	 {ldi, ?temp1, 200},
-	 {label, l1},
-	 {ldi, ?temp2, 199},
-	 {label, l2},
-	 {dec, ?temp2},
-	 {brne, l2},
-	 {dec, ?temp1},
-	 {brne, l1}
-	]).
-
+%%%
+%%% Tests
+%%%
 nop_test() ->
     code({nop}) =:= <<2#0000000000000000:16>>.
 
@@ -243,11 +233,11 @@ brbs_test() ->
 brbc_test() ->
     code({brbs, 7, 1}) =:= <<2#1111000000001111>>.
 
-eval_expr_test_() ->
-    S = dict:from_list([{temp, 3}]),
-    [?_assert(1 == eval_expr(1, S)),
-     ?_assert(3 == eval_expr(temp, S))].
+register_map_test() ->
+    ?assert(0 =:= register_map(r0)).
 
+register_map_badarg_test() ->
+    ?assertThrow({badarg, r32}, register_map(r32)).
 pc_relative_addr_test() ->
     ?assert(0 == pc_relative_addr(4, 5)).
 
@@ -259,10 +249,6 @@ pass_1_label_test() ->
 pass_1_org_test() ->
     ?assertMatch({_, [{4, {nop}}]}, pass_1(0, [{org, 4}, {nop}])).
 
-pass_1_def_test() ->
-    {S1, _} = pass_1(0, tn13def(), [], [{def, temp1, r17}]),
-    ?assert(17 == dict:fetch(temp1, S1)). 
-
 pass_1_test() ->
     ?assertMatch({_, [{0, {nop}}, {1, {sec}}]}, pass_1(0, [{nop}, {sec}])).
 
@@ -271,7 +257,7 @@ pass_2_brbs_brbc_test_() ->
     [?_assertMatch({3, {brbs, 0, 1}}, pass_2(S, {3, {brbs, 0, l1}})),
      ?_assertMatch({3, {brbc, 0, 1}}, pass_2(S, {3, {brbc, 0, l1}}))].
 
-pass_2_ldi_test_() ->
+pass_2_ldi_test() ->
     S = dict:from_list([{r1, 1}, {nine, 9}]),
     [?_assertMatch({0, {ldi, 1, 255}}, pass_2(S, {0, {ldi, r1, 255}})),
      ?_assertMatch({0, {ldi, 1, 9}}, pass_2(S, {0, {ldi, r1, nine}}))].
@@ -284,7 +270,7 @@ pass_2_brne_test() ->
     S = dict:store(l2, 5, dict:new()),
     ?assertMatch({0, {brne, 4}}, pass_2(S, {0, {brne, l2}})).
 
-pass_2_test_() ->
+pass_2_test() ->
     [?_assertMatch([], pass_2(dict:new(), [])),
      ?_assertMatch([{3, {nop}}], pass_2(dict:new(), [{3, {nop}}]))].
 
