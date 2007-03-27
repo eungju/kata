@@ -1,6 +1,35 @@
 -module(avr_asm).
 -export([asm/1]).
 -include_lib("eunit/include/eunit.hrl").
+-compile(nowarn_unused_vars).
+
+instruction(Name) ->
+    case Name of
+	nop ->
+	    {1, fun(Labels, A, {}) -> {} end};
+	sec ->
+	    {1, fun(Labels, A, {}) -> {} end};
+	bset ->
+	    {1, fun(Labels, A, {S3}) -> {S3} end};
+	bclr ->
+	    {1, fun(Labels, A, {S3}) -> {S3} end};
+	ser ->
+	    {1, fun(Labels, A, {Rd4}) -> {register_addr(Rd4)} end};
+	com ->
+	    {1, fun(Labels, A, {Rd5}) -> {register_addr(Rd5)} end};
+	tst ->
+	    {1, fun(Labels, A, {Rd10}) -> {register_addr(Rd10)} end};
+	brbs ->
+	    {1, fun(Labels, A, {S3, K}) -> {S3, pc_relative_addr(A, labels_fetch(K, Labels))} end};
+	brbc ->
+	    {1, fun(Labels, A, {S3, K}) -> {S3, pc_relative_addr(A, labels_fetch(K, Labels))} end};
+	ldi ->
+	    {1, fun(Labels, A, {Rd, K}) -> {register_addr(Rd), K} end};
+	dec ->
+	    {1, fun(Labels, A, {Rd}) -> {register_addr(Rd)} end};
+	brne ->
+	    {1, fun(Labels, A, {K}) -> {pc_relative_addr(A, labels_fetch(K, Labels))} end}
+    end.
 
 %	MNEMONIC_NOP = 0,  //          0000 0000 0000 0000
 %	MNEMONIC_SEC,      //          1001 0100 0000 1000
@@ -163,8 +192,10 @@ register_addr(RegName) ->
     Regs = dict:from_list(lists:map(F, lists:seq(0, 31))),
     Has = dict:is_key(RegName, Regs),
     if
-	Has =:= true ->
+	Has ->
 	    dict:fetch(RegName, Regs);
+	is_integer(RegName) ->
+	    RegName;
 	true ->
 	    throw({badarg, RegName})
     end.
@@ -192,27 +223,18 @@ pass_1(_, Labels, Passed, [{org,Address}|T]) ->
 pass_1(A, Labels, Passed, [{label,Name}|T]) ->
     pass_1(A, labels_add(Name, A, Labels), Passed, T);
 pass_1(A, Labels, Passed, [H|T]) ->
-    pass_1(A + 1, Labels, [{A, H}|Passed], T).
+    [Name|Operands] = tuple_to_list(H),
+    {Size, _} = instruction(Name),
+    pass_1(A + Size, Labels, [{A, Name, list_to_tuple(Operands)}|Passed], T).
 
 %% Second pass
 
 pc_relative_addr(PC, T) ->
     T - PC - 1.
 
-pass_2(Labels, {A, I}) ->
-    P = case I of
-	{M} ->
-	    {M};
-	{M, S, K} when M=:=brbs; M=:=brbc ->
-	    {M, S, pc_relative_addr(A, labels_fetch(K, Labels))};
-	{M, Rd, K} when M=:=ldi ->
-	    {M, register_addr(Rd), K};
-	{M, Rd} when M=:=dec ->
-	    {M, register_addr(Rd)};
-	{M, K} when M=:=brne ->
-	    {M, pc_relative_addr(A, labels_fetch(K, Labels))}
-    end,
-    {A, P};
+pass_2(Labels, {A, M, Operands}) ->
+    {_, F} = instruction(M),
+    {A, M, F(Labels, A, Operands)};
 pass_2(_, []) ->
     [];
 pass_2(Labels, [H|T]) ->
@@ -237,8 +259,9 @@ brbs_test() ->
 brbc_test() ->
     code({brbs, 7, 1}) =:= <<2#1111000000001111>>.
 
-register_addr_test() ->
-    ?assert(0 =:= register_addr(r0)).
+register_addr_test_() ->
+    [?_assert(0 =:= register_addr(r0)),
+     ?_assert(1 =:= register_addr(1))].
 
 register_addr_badarg_test() ->
     ?assertThrow({badarg, r32}, register_addr(r32)),
@@ -250,39 +273,73 @@ pc_relative_addr_test() ->
 pass_1_label_test() ->
     {S, Passed} = pass_1(0, [{nop}, {label, l1}]),
     ?assert(1 == labels_fetch(l1, S)),
-    ?assertMatch([{0, {nop}}], Passed).
+    ?assertMatch([{0, nop, {}}], Passed).
 
 pass_1_org_test() ->
-    ?assertMatch({_, [{4, {nop}}]}, pass_1(0, [{org, 4}, {nop}])).
+    ?assertMatch({_, [{4, nop, {}}]}, pass_1(0, [{org, 4}, {nop}])).
 
-pass_1_test() ->
-    ?assertMatch({_, [{0, {nop}}, {1, {sec}}]}, pass_1(0, [{nop}, {sec}])).
+pass_1_test_() ->
+    [?_assertMatch({_, [{0, nop, {}}, {1, nop, {}}]}, pass_1(0, [{nop}, {nop}])),
+     ?_assertMatch({_, [{0, bclr, {7}}, {1, nop, {}}]}, pass_1(0, [{bclr, 7}, {nop}]))].
 
-pass_2_brbs_brbc_test_() ->
+pass_2_nop_test_() ->
+    S = labels_new(),
+    [?_assertMatch({0, nop, {}}, pass_2(S, {0, nop, {}}))].
+
+pass_2_bset_test_() ->
+    S = labels_new(),
+    [?_assertMatch({3, bset, {0}}, pass_2(S, {3, bset, {0}}))].
+
+pass_2_bclr_test_() ->
+    S = labels_new(),
+    [?_assertMatch({3, bclr, {7}}, pass_2(S, {3, bclr, {7}}))].
+
+pass_2_ser_test_() ->
+    S = labels_new(),
+    [
+     ?_assertMatch({0, ser, {15}}, pass_2(S, {0, ser, {r15}}))
+    ].
+
+pass_2_com_test_() ->
+    S = labels_new(),
+    [
+     ?_assertMatch({0, com, {31}}, pass_2(S, {0, com, {r31}}))
+    ].
+
+pass_2_tst_test_() ->
+    S = labels_new(),
+    [
+     ?_assertMatch({0, tst, {31}}, pass_2(S, {0, tst, {r31}}))
+    ].
+
+pass_2_brbs_test_() ->
     S = labels_add(l1, 5, labels_new()),
-    [?_assertMatch({3, {brbs, 0, 1}}, pass_2(S, {3, {brbs, 0, l1}})),
-     ?_assertMatch({3, {brbc, 0, 1}}, pass_2(S, {3, {brbc, 0, l1}}))].
+    [?_assertMatch({3, brbs, {0, 1}}, pass_2(S, {3, brbs, {0, l1}}))].
+
+pass_2_brbc_test_() ->
+    S = labels_add(l1, 5, labels_new()),
+    [?_assertMatch({3, brbc, {0, 1}}, pass_2(S, {3, brbc, {0, l1}}))].
 
 pass_2_ldi_test() ->
     S = labels_new(),
-    ?assertMatch({0, {ldi, 1, 255}}, pass_2(S, {0, {ldi, r1, 255}})).
+    ?assertMatch({0, ldi, {1, 255}}, pass_2(S, {0, ldi, {r1, 255}})).
 
 pass_2_dec_test() ->
     S = labels_new(),
-    ?assertMatch({0, {dec, 1}}, pass_2(S, {0, {dec, r1}})).
+    ?assertMatch({0, dec, {1}}, pass_2(S, {0, dec, {r1}})).
 
 pass_2_brne_test() ->
     S = labels_add(l2, 5, labels_new()),
-    ?assertMatch({0, {brne, 4}}, pass_2(S, {0, {brne, l2}})).
+    ?assertMatch({0, brne, {4}}, pass_2(S, {0, brne, {l2}})).
 
 pass_2_test() ->
     [?_assertMatch([], pass_2(labels_new(), [])),
-     ?_assertMatch([{3, {nop}}], pass_2(labels_new(), [{3, {nop}}]))].
+     ?_assertMatch([{3, nop, {}}], pass_2(labels_new(), [{3, nop, {}}]))].
 
 asm_test() ->
-    ?assertMatch([{0, {nop}}], asm([{nop}])).
+    ?assertMatch([{0, nop, {}}], asm([{nop}])).
 
 asm_brbc_test_() ->
-    [?_assertMatch([{0, {brbc, 0, -1}}], asm([{label, l1}, {brbc, 0, l1}])),
-     ?_assertMatch([{0, {brbc, 0, 0}}], asm([{brbc, 0, l1}, {label, l1}])),
-     ?_assertMatch([{100, {brbc, 0, -1}}], asm([{org, 100}, {label, l1}, {brbc, 0, l1}]))].
+    [?_assertMatch([{0, brbc, {0, -1}}], asm([{label, l1}, {brbc, 0, l1}])),
+     ?_assertMatch([{0, brbc, {0, 0}}], asm([{brbc, 0, l1}, {label, l1}])),
+     ?_assertMatch([{100, brbc, {0, -1}}], asm([{org, 100}, {label, l1}, {brbc, 0, l1}]))].
