@@ -169,23 +169,33 @@ register_map(RegName) ->
 	    throw({badarg, RegName})
     end.
 
-label_mark(Name, Addr, D) ->
-    dict:store(Name, Addr, D).
-label_addr(Name, D) ->
-    dict:fetch(Name, D).
+%% Labels
+
+labels_new() ->
+    dict:new().
+
+labels_add(Name, Addr, Labels) ->
+    dict:store(Name, Addr, Labels).
+
+labels_fetch(Name, Labels) ->
+    dict:fetch(Name, Labels).
+
+%% First pass
 
 pass_1(A, L) ->
-    pass_1(A, dict:new(), [], L).
+    pass_1(A, labels_new(), [], L).
 
 pass_1(_, Symbols, Passed, []) ->
     {Symbols, lists:reverse(Passed)};
 pass_1(_, Symbols, Passed, [{org,Address}|T]) ->
     pass_1(Address, Symbols, Passed, T);
 pass_1(A, Symbols, Passed, [{label,Label}|T]) ->
-    NewSymbols = label_mark(Label, A, Symbols),
+    NewSymbols = labels_add(Label, A, Symbols),
     pass_1(A, NewSymbols, Passed, T);
 pass_1(A, Symbols, Passed, [H|T]) ->
     pass_1(A + 1, Symbols, [{A, H}|Passed], T).
+
+%% Second pass
 
 pc_relative_addr(PC, T) ->
     T - PC - 1.
@@ -195,13 +205,13 @@ pass_2(Symbols, {A, I}) ->
 	{M} ->
 	    {M};
 	{M, S, K} when M=:=brbs; M=:=brbc ->
-	    {M, S, pc_relative_addr(A, label_addr(K, Symbols))};
+	    {M, S, pc_relative_addr(A, labels_fetch(K, Symbols))};
 	{M, Rd, K} when M=:=ldi ->
 	    {M, register_map(Rd), K};
 	{M, Rd} when M=:=dec ->
 	    {M, register_map(Rd)};
 	{M, K} when M=:=brne ->
-	    {M, pc_relative_addr(A, label_addr(K, Symbols))}
+	    {M, pc_relative_addr(A, labels_fetch(K, Symbols))}
     end,
     {A, P};
 pass_2(_, []) ->
@@ -209,18 +219,14 @@ pass_2(_, []) ->
 pass_2(Symbols, [H|T]) ->
     [pass_2(Symbols, H)|pass_2(Symbols, T)].
 
-tn13def() ->
-    F = fun(N) -> {list_to_atom([$r|integer_to_list(N)]), N} end,
-    Dictionary = lists:map(F, lists:seq(0, 31)),
-    dict:from_list(Dictionary).
-
 asm(L) ->
-    {Symbols, P1} = pass_1(0, tn13def(), [], L),
+    Labels = labels_new(),
+    {Symbols, P1} = pass_1(0, Labels, [], L),
     pass_2(Symbols, P1).
 
-%%%
-%%% Tests
-%%%
+
+%% Tests
+
 nop_test() ->
     code({nop}) =:= <<2#0000000000000000:16>>.
 
@@ -245,7 +251,7 @@ pc_relative_addr_test() ->
 
 pass_1_label_test() ->
     {S, Passed} = pass_1(0, [{nop}, {label, l1}]),
-    ?assert(1 == dict:fetch(l1, S)),
+    ?assert(1 == labels_fetch(l1, S)),
     ?assertMatch([{0, {nop}}], Passed).
 
 pass_1_org_test() ->
@@ -255,26 +261,25 @@ pass_1_test() ->
     ?assertMatch({_, [{0, {nop}}, {1, {sec}}]}, pass_1(0, [{nop}, {sec}])).
 
 pass_2_brbs_brbc_test_() ->
-    S = dict:store(l1, 5, dict:new()),
+    S = labels_add(l1, 5, labels_new()),
     [?_assertMatch({3, {brbs, 0, 1}}, pass_2(S, {3, {brbs, 0, l1}})),
      ?_assertMatch({3, {brbc, 0, 1}}, pass_2(S, {3, {brbc, 0, l1}}))].
 
 pass_2_ldi_test() ->
-    S = dict:from_list([{r1, 1}, {nine, 9}]),
-    [?_assertMatch({0, {ldi, 1, 255}}, pass_2(S, {0, {ldi, r1, 255}})),
-     ?_assertMatch({0, {ldi, 1, 9}}, pass_2(S, {0, {ldi, r1, nine}}))].
+    S = labels_new(),
+    ?assertMatch({0, {ldi, 1, 255}}, pass_2(S, {0, {ldi, r1, 255}})).
 
 pass_2_dec_test() ->
-    S = dict:from_list([{r1, 1}]),
+    S = labels_new(),
     ?assertMatch({0, {dec, 1}}, pass_2(S, {0, {dec, r1}})).
 
 pass_2_brne_test() ->
-    S = dict:store(l2, 5, dict:new()),
+    S = labels_add(l2, 5, labels_new()),
     ?assertMatch({0, {brne, 4}}, pass_2(S, {0, {brne, l2}})).
 
 pass_2_test() ->
-    [?_assertMatch([], pass_2(dict:new(), [])),
-     ?_assertMatch([{3, {nop}}], pass_2(dict:new(), [{3, {nop}}]))].
+    [?_assertMatch([], pass_2(labels_new(), [])),
+     ?_assertMatch([{3, {nop}}], pass_2(labels_new(), [{3, {nop}}]))].
 
 asm_test() ->
     ?assertMatch([{0, {nop}}], asm([{nop}])).
