@@ -185,44 +185,42 @@ labels_fetch(Name, Labels) ->
 pass_1(A, L) ->
     pass_1(A, labels_new(), [], L).
 
-pass_1(_, Symbols, Passed, []) ->
-    {Symbols, lists:reverse(Passed)};
-pass_1(_, Symbols, Passed, [{org,Address}|T]) ->
-    pass_1(Address, Symbols, Passed, T);
-pass_1(A, Symbols, Passed, [{label,Label}|T]) ->
-    NewSymbols = labels_add(Label, A, Symbols),
-    pass_1(A, NewSymbols, Passed, T);
-pass_1(A, Symbols, Passed, [H|T]) ->
-    pass_1(A + 1, Symbols, [{A, H}|Passed], T).
+pass_1(_, Labels, Passed, []) ->
+    {Labels, lists:reverse(Passed)};
+pass_1(_, Labels, Passed, [{org,Address}|T]) ->
+    pass_1(Address, Labels, Passed, T);
+pass_1(A, Labels, Passed, [{label,Name}|T]) ->
+    pass_1(A, labels_add(Name, A, Labels), Passed, T);
+pass_1(A, Labels, Passed, [H|T]) ->
+    pass_1(A + 1, Labels, [{A, H}|Passed], T).
 
 %% Second pass
 
 pc_relative_addr(PC, T) ->
     T - PC - 1.
 
-pass_2(Symbols, {A, I}) ->
+pass_2(Labels, {A, I}) ->
     P = case I of
 	{M} ->
 	    {M};
 	{M, S, K} when M=:=brbs; M=:=brbc ->
-	    {M, S, pc_relative_addr(A, labels_fetch(K, Symbols))};
+	    {M, S, pc_relative_addr(A, labels_fetch(K, Labels))};
 	{M, Rd, K} when M=:=ldi ->
 	    {M, register_addr(Rd), K};
 	{M, Rd} when M=:=dec ->
 	    {M, register_addr(Rd)};
 	{M, K} when M=:=brne ->
-	    {M, pc_relative_addr(A, labels_fetch(K, Symbols))}
+	    {M, pc_relative_addr(A, labels_fetch(K, Labels))}
     end,
     {A, P};
 pass_2(_, []) ->
     [];
-pass_2(Symbols, [H|T]) ->
-    [pass_2(Symbols, H)|pass_2(Symbols, T)].
+pass_2(Labels, [H|T]) ->
+    [pass_2(Labels, H)|pass_2(Labels, T)].
 
-asm(L) ->
-    Labels = labels_new(),
-    {Symbols, P1} = pass_1(0, Labels, [], L),
-    pass_2(Symbols, P1).
+asm(Instructions) ->
+    {Labels, FirstPassed} = pass_1(0, labels_new(), [], Instructions),
+    pass_2(Labels, FirstPassed).
 
 
 %% Tests
