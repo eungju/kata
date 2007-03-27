@@ -158,7 +158,7 @@ code({M, S, K}) ->
 	brbc -> <<2#111101:6,K:7,S:3>>
     end.
 
-register_map(RegName) ->
+register_addr(RegName) ->
     F = fun(N) -> {list_to_atom([$r|integer_to_list(N)]), N} end,
     Regs = dict:from_list(lists:map(F, lists:seq(0, 31))),
     Has = dict:is_key(RegName, Regs),
@@ -207,9 +207,9 @@ pass_2(Symbols, {A, I}) ->
 	{M, S, K} when M=:=brbs; M=:=brbc ->
 	    {M, S, pc_relative_addr(A, labels_fetch(K, Symbols))};
 	{M, Rd, K} when M=:=ldi ->
-	    {M, register_map(Rd), K};
+	    {M, register_addr(Rd), K};
 	{M, Rd} when M=:=dec ->
-	    {M, register_map(Rd)};
+	    {M, register_addr(Rd)};
 	{M, K} when M=:=brne ->
 	    {M, pc_relative_addr(A, labels_fetch(K, Symbols))}
     end,
@@ -239,12 +239,12 @@ brbs_test() ->
 brbc_test() ->
     code({brbs, 7, 1}) =:= <<2#1111000000001111>>.
 
-register_map_test() ->
-    ?assert(0 =:= register_map(r0)).
+register_addr_test() ->
+    ?assert(0 =:= register_addr(r0)).
 
-register_map_badarg_test() ->
-    ?assertThrow({badarg, r32}, register_map(r32)),
-    ?assertThrow({badarg, ab}, register_map(ab)).
+register_addr_badarg_test() ->
+    ?assertThrow({badarg, r32}, register_addr(r32)),
+    ?assertThrow({badarg, ab}, register_addr(ab)).
 
 pc_relative_addr_test() ->
     ?assert(0 == pc_relative_addr(4, 5)).
