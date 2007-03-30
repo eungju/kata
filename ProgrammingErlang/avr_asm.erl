@@ -2,9 +2,17 @@
 -export([asm/1]).
 -include_lib("eunit/include/eunit.hrl").
 -compile(nowarn_unused_vars).
-
+    
 instruction(Name) ->
     case Name of
+	adc ->
+	    {1, fun(Labels, A, {Rd5, Rr5}) -> {register_addr(Rd5), register_addr(Rr5)} end};
+	add ->
+	    {1, fun(Labels, A, {Rd5, Rr5}) -> {register_addr(Rd5), register_addr(Rr5)} end};
+	adiw ->
+	    {1, fun(Labels, A, {Rd2, K6}) -> {(register_addr(Rd2) - 24) div 2, K6} end};
+	and_ ->
+	    {1, fun(Labels, A, {Rd5, Rr5}) -> {register_addr(Rd5), register_addr(Rr5)} end};
 	nop ->
 	    {1, fun(Labels, A, {}) -> {} end};
 	sec ->
@@ -341,6 +349,30 @@ pass_2_dec_test() ->
 pass_2_brne_test() ->
     S = labels_add(l2, 5, labels_new()),
     ?assertMatch({0, brne, {4}}, pass_2(S, {0, brne, {l2}})).
+
+pass_2_adc_test_() ->
+    S = labels_new(),
+    [
+     ?_assertMatch({0, adc, {0, 31}}, pass_2(S, {0, adc, {r0, r31}}))
+    ].
+
+pass_2_add_test_() ->
+    S = labels_new(),
+    [
+     ?_assertMatch({0, add, {0, 31}}, pass_2(S, {0, add, {r0, r31}}))
+    ].
+
+pass_2_adiw_test_() ->
+    S = labels_new(),
+    [
+     ?_assertMatch({0, adiw, {3, 63}}, pass_2(S, {0, adiw, {r30, 63}}))
+    ].
+
+pass_2_and_test_() ->
+    S = labels_new(),
+    [
+     ?_assertMatch({0, and_, {31, 0}}, pass_2(S, {0, and_, {r31, r0}}))
+    ].
 
 asm_test() ->
     ?assertMatch([{0, nop, {}}], asm([{nop}])).
