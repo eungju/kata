@@ -20,15 +20,15 @@ instruction(Name) ->
 	tst ->
 	    {1, fun(Labels, A, {Rd10}) -> {register_addr(Rd10)} end};
 	brbs ->
-	    {1, fun(Labels, A, {S3, K}) -> {S3, pc_relative_addr(A, labels_fetch(K, Labels))} end};
+	    {1, fun(Labels, A, {S3, K}) -> {S3, pc_relative_addr(labels_fetch(K, Labels), A)} end};
 	brbc ->
-	    {1, fun(Labels, A, {S3, K}) -> {S3, pc_relative_addr(A, labels_fetch(K, Labels))} end};
+	    {1, fun(Labels, A, {S3, K}) -> {S3, pc_relative_addr(labels_fetch(K, Labels), A)} end};
 	ldi ->
 	    {1, fun(Labels, A, {Rd, K}) -> {register_addr(Rd), K} end};
 	dec ->
 	    {1, fun(Labels, A, {Rd}) -> {register_addr(Rd)} end};
 	brne ->
-	    {1, fun(Labels, A, {K}) -> {pc_relative_addr(A, labels_fetch(K, Labels))} end}
+	    {1, fun(Labels, A, {K}) -> {pc_relative_addr(labels_fetch(K, Labels), A)} end}
     end.
 
 %	MNEMONIC_NOP = 0,  //          0000 0000 0000 0000
@@ -187,20 +187,27 @@ code({M, S, K}) ->
 	brbc -> <<2#111101:6,K:7,S:3>>
     end.
 
-register_addr(RegName) ->
+
+%%% Addressing
+
+register_addr(RegAddr) ->
     F = fun(N) -> {list_to_atom([$r|integer_to_list(N)]), N} end,
     Regs = dict:from_list(lists:map(F, lists:seq(0, 31))),
-    Has = dict:is_key(RegName, Regs),
+    Has = dict:is_key(RegAddr, Regs),
     if
 	Has ->
-	    dict:fetch(RegName, Regs);
-	is_integer(RegName) ->
-	    RegName;
+	    dict:fetch(RegAddr, Regs);
+	is_integer(RegAddr) ->
+	    RegAddr;
 	true ->
-	    throw({badarg, RegName})
+	    throw({badarg, RegAddr})
     end.
 
-%% Labels
+pc_relative_addr(ProgramAddr, PC) ->
+    ProgramAddr - PC - 1.
+
+
+%%% Labels
 
 labels_new() ->
     dict:new().
@@ -211,7 +218,8 @@ labels_add(Name, Addr, Labels) ->
 labels_fetch(Name, Labels) ->
     dict:fetch(Name, Labels).
 
-%% First pass
+
+%%% First pass
 
 pass_1(A, L) ->
     pass_1(A, labels_new(), [], L).
@@ -227,10 +235,8 @@ pass_1(A, Labels, Passed, [H|T]) ->
     {Size, _} = instruction(Name),
     pass_1(A + Size, Labels, [{A, Name, list_to_tuple(Operands)}|Passed], T).
 
-%% Second pass
 
-pc_relative_addr(PC, T) ->
-    T - PC - 1.
+%%% Second pass
 
 pass_2(Labels, {A, M, Operands}) ->
     {_, F} = instruction(M),
@@ -245,7 +251,7 @@ asm(Instructions) ->
     pass_2(Labels, FirstPassed).
 
 
-%% Tests
+%%% Tests
 
 nop_test() ->
     code({nop}) =:= <<2#0000000000000000:16>>.
@@ -268,7 +274,7 @@ register_addr_badarg_test() ->
     ?assertThrow({badarg, ab}, register_addr(ab)).
 
 pc_relative_addr_test() ->
-    ?assert(0 == pc_relative_addr(4, 5)).
+    ?assert(0 == pc_relative_addr(5, 4)).
 
 pass_1_label_test() ->
     {S, Passed} = pass_1(0, [{nop}, {label, l1}]),
@@ -281,6 +287,10 @@ pass_1_org_test() ->
 pass_1_test_() ->
     [?_assertMatch({_, [{0, nop, {}}, {1, nop, {}}]}, pass_1(0, [{nop}, {nop}])),
      ?_assertMatch({_, [{0, bclr, {7}}, {1, nop, {}}]}, pass_1(0, [{bclr, 7}, {nop}]))].
+
+pass_2_test_() ->
+    [?_assertMatch([], pass_2(labels_new(), [])),
+     ?_assertMatch([{3, nop, {}}], pass_2(labels_new(), [{3, nop, {}}]))].
 
 pass_2_nop_test_() ->
     S = labels_new(),
@@ -331,10 +341,6 @@ pass_2_dec_test() ->
 pass_2_brne_test() ->
     S = labels_add(l2, 5, labels_new()),
     ?assertMatch({0, brne, {4}}, pass_2(S, {0, brne, {l2}})).
-
-pass_2_test() ->
-    [?_assertMatch([], pass_2(labels_new(), [])),
-     ?_assertMatch([{3, nop, {}}], pass_2(labels_new(), [{3, nop, {}}]))].
 
 asm_test() ->
     ?assertMatch([{0, nop, {}}], asm([{nop}])).
