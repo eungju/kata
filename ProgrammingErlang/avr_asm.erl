@@ -13,6 +13,12 @@ instruction(Name) ->
 	    {1, fun(Labels, A, {Rd2, K6}) -> {(register_addr(Rd2) - 24) div 2, K6} end};
 	and_ ->
 	    {1, fun(Labels, A, {Rd5, Rr5}) -> {register_addr(Rd5), register_addr(Rr5)} end};
+	andi_ ->
+	    {1, fun(Labels, A, {Rd5, K8}) -> {register_addr(Rd5), K8} end};
+	asr_ ->
+	    {1, fun(Labels, A, {Rd5}) -> {register_addr(Rd5)} end};
+	bld_ ->
+	    {1, fun(Labels, A, {Rd5, B3}) -> {register_addr(Rd5), B3} end};
 	nop ->
 	    {1, fun(Labels, A, {}) -> {} end};
 	sec ->
@@ -372,6 +378,24 @@ pass_2_and_test_() ->
     S = labels_new(),
     [
      ?_assertMatch({0, and_, {31, 0}}, pass_2(S, {0, and_, {r31, r0}}))
+    ].
+
+pass_2_andi_test_() ->
+    S = labels_new(),
+    [
+     ?_assertMatch({0, andi_, {31, 255}}, pass_2(S, {0, andi_, {r31, 255}}))
+    ].
+
+pass_2_asr_test_() ->
+    S = labels_new(),
+    [
+     ?_assertMatch({0, asr_, {31}}, pass_2(S, {0, asr_, {r31}}))
+    ].
+
+pass_2_bld_test_() ->
+    S = labels_new(),
+    [
+     ?_assertMatch({0, bld_, {31, 7}}, pass_2(S, {0, bld_, {r31, 7}}))
     ].
 
 asm_test() ->
