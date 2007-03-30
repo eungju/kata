@@ -6,12 +6,13 @@
 
 main() ->
     avr_asm:asm([
-	 {ldi, ?temp1, 200},
-	 {label, l1},
-	 {ldi, ?temp2, 199},
-	 {label, l2},
-	 {dec, ?temp2},
-	 {brne, l2},
-	 {dec, ?temp1},
-	 {brne, l1}
-	]).
+		 {org, 16#10},
+		 {ldi, ?temp1, 200},
+		 {label, l1},
+		 {ldi, ?temp2, 199},
+		 {label, l2},
+		 {dec, ?temp2},
+		 {brne, l2},
+		 {dec, ?temp1},
+		 {brne, l1}
+		]).
