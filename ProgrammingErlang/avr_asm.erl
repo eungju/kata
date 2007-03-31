@@ -39,6 +39,12 @@ operand_Rd4_K8(Labels, A, {Rd4, K8}) ->
 operand_k7(Labels, A, {K7}) ->
     {pc_relative_addr(labels_fetch(K7, Labels), A)}.
 
+operand_k22(Labels, A, {K22}) ->
+    {labels_fetch(K22, Labels)}.
+
+operand_A5_b3(Labels, A, {A5, B3}) ->
+    {A5, B3}.
+
 operand_none_test() ->
     ?assertMatch({}, operand_none(labels_new(), 0, {})).
 
@@ -77,6 +83,13 @@ operand_k7_test() ->
     Labels = labels_add(l1, 0, labels_new()),
     ?assertMatch({-64}, operand_k7(Labels, 63, {l1})).
 
+operand_k22_test() ->
+    Labels = labels_add(l1, 4 * 1024 * 1024, labels_new()),
+    ?assertMatch({4 * 1024 * 1024}, operand_k22(Labels, 0, {l1})).
+
+operand_A5_b3_test() ->
+    ?assertMatch({31, 7}, operand_A5_b3(labels_new(), 0, {31, 7})).
+
 instruction(Name) ->
     case Name of
 	adc ->
@@ -105,14 +118,83 @@ instruction(Name) ->
 	    {1, fun operand_k7/3};
 	break ->
 	    {1, fun operand_none/3};
+	breq ->
+	    {1, fun operand_k7/3};
+	brge ->
+	    {1, fun operand_k7/3};
+	brhc ->
+	    {1, fun operand_k7/3};
+	brhs ->
+	    {1, fun operand_k7/3};
+	brid ->
+	    {1, fun operand_k7/3};
+	brie ->
+	    {1, fun operand_k7/3};
+	brlo ->
+	    {1, fun operand_k7/3};
+	brlt ->
+	    {1, fun operand_k7/3};
+	brmi ->
+	    {1, fun operand_k7/3};
 	brne ->
+	    {1, fun operand_k7/3};
+	brpl ->
+	    {1, fun operand_k7/3};
+	brsh ->
+	    {1, fun operand_k7/3};
+	brtc ->
+	    {1, fun operand_k7/3};
+	brts ->
+	    {1, fun operand_k7/3};
+	brvc ->
+	    {1, fun operand_k7/3};
+	brvs ->
 	    {1, fun operand_k7/3};
 	bset ->
 	    {1, fun operand_s3/3};
+	bst ->
+	    {1, fun operand_Rd5_b3/3};
+        call ->
+	    {2, fun operand_k22/3};
+        cbi ->
+	    {2, fun operand_A5_b3/3};
+        cbr ->
+	    {2, fun operand_Rd4_K8/3};
+        clc ->
+	    {2, fun operand_none/3};
+        clh ->
+	    {2, fun operand_none/3};
+        cli ->
+	    {2, fun operand_none/3};
+        cln ->
+	    {2, fun operand_none/3};
+        clr ->
+	    {2, fun operand_Rd5Rd5/3};
+        cls ->
+	    {2, fun operand_none/3};
+        clt ->
+	    {2, fun operand_none/3};
+        clv ->
+	    {2, fun operand_none/3};
+        clz ->
+	    {2, fun operand_none/3};
 	com ->
 	    {1, fun operand_Rd5/3};
+	cp ->
+	    {1, fun operand_Rd5_Rr5/3};
+	cpc ->
+	    {1, fun operand_Rd5_Rr5/3};
+	cpi ->
+	    {1, fun operand_Rd4_K8/3};
+	cpse ->
+	    {1, fun operand_Rd5_Rr5/3};
 	dec ->
 	    {1, fun operand_Rd5/3};
+	eicall ->
+	    {1, fun operand_none/3};
+	eijmp ->
+	    {1, fun operand_none/3};
+
 	ldi ->
 	    {1, fun operand_Rd4_K8/3};
 	nop ->
