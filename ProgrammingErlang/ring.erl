@@ -1,26 +1,25 @@
 -module(ring).
 -compile(export_all).
 
-last([Last]) ->
-    Last;
-last([_|T]) ->
-    last(T).
-
 start(N) ->
     start(N, undefined, []).
 
 start(0, Next, Spawned) ->
-    last(Spawned) ! {route, Next},
+    Next ! {route, Next},
     Spawned;
 start(N, Next, Spawned) ->
     Pid = spawn(fun() -> loop(Next) end),
-    %io:format("~w created~n", [Pid]),
     start(N - 1, Pid, [Pid|Spawned]).
 
 loop(Next) ->
     receive
-	{route, NewNext} ->
-	    loop(NewNext);
+	{route, Head} when Next =:= undefined ->
+	    %io:format("~w: Link to ~w~n", [self(), Head]),
+	    loop(Head);
+	{route, Head} ->
+	    %io:format("~w: Link to ~w~n", [self(), Next]),
+	    Next ! {route, Head},
+	    loop(Next);
 	{stop} ->
 	    true;
 	{From, {in, Id}} ->
@@ -69,4 +68,4 @@ bench(N, M) ->
     wait(Ids),
     {Runtime, WallClock} = stopwatch_stop(),
     stop(Pids),
-    io:format("Stop ~w, ~w~n", [Runtime, WallClock]).
+    io:format("Runtime: ~wms, Wall clock: ~wms~n", [Runtime, WallClock]).
