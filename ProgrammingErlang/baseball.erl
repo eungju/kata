@@ -4,7 +4,7 @@
 -compile(export_all).
 
 %% Possible counts
-%% S3B0, S2B0, S1B2, S1B1, S0B3, S0B2, S0B1, S0B0
+%% S3B0, S2B0, S1B2, S1B1, S1B0, S0B3, S0B2, S0B1, S0B0
 
 %S3B0
 ball_count([A, B, C], [A, B, C]) ->
@@ -62,6 +62,13 @@ ball_count([A, _, C], [_, C, A]) ->
     {{strike, 0}, {ball, 2}};
 ball_count([A, _, C], [C, _, A]) ->
     {{strike, 0}, {ball, 2}};
+%S1B0
+ball_count([A, _, _], [A, _, _]) ->
+    {{strike, 1}, {ball, 0}};
+ball_count([_, B, _], [_, B, _]) ->
+    {{strike, 1}, {ball, 0}};
+ball_count([_, _, C], [_, _, C]) ->
+    {{strike, 1}, {ball, 0}};
 %S0B1
 ball_count([A, _, _], [_, A, _]) ->
     {{strike, 0}, {ball, 1}};
@@ -104,5 +111,6 @@ ball_count_test_() ->
     ?_assertMatch({{strike, 1}, {ball, 1}}, ball_count([1, 2, 3], [3, 2, 7])),
     ?_assertMatch({{strike, 0}, {ball, 3}}, ball_count([1, 2, 3], [3, 1, 2])),
     ?_assertMatch({{strike, 0}, {ball, 2}}, ball_count([1, 2, 3], [2, 3, 5])),
+    ?_assertMatch({{strike, 1}, {ball, 0}}, ball_count([1, 2, 3], [1, 4, 5])),
     ?_assertMatch({{strike, 0}, {ball, 1}}, ball_count([1, 2, 3], [3, 4, 8])),
     ?_assertMatch({{strike, 0}, {ball, 0}}, ball_count([1, 2, 3], [4, 5, 6]))].
