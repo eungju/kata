@@ -1,6 +1,6 @@
 -module('3np1').
 -include_lib("eunit/include/eunit.hrl").
--export([max_cycle/1, max_cycle_upto/1, pmax_cycle/1, pmax_cycle_upto/1]).
+-export([max_cycle/1, max_cycle_upto/1, pmax_cycle/1, pmax_cycle_upto/1, benchmark/0]).
 
 cycle(N) ->
     cycle(N, 0).
@@ -128,3 +128,11 @@ pmax_cycle_upto(M) ->
 
 pmax_cycle_test() ->
     ?assertMatch(20, pmax_cycle_upto(10)).
+
+benchmark() ->
+    Args = [lists:seq(1, 1000000)],
+    {T1, _} = timer:tc(?MODULE, max_cycle, Args),
+    {T2, _} = timer:tc(?MODULE, pmax_cycle, Args),
+    io:format("max_cycle: ~wms.~n", [T1 / 1000]),
+    io:format("pmax_cycle: ~wms.~n", [T2 / 1000]).
+			      
