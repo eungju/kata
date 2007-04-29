@@ -76,8 +76,12 @@ snapshot(FileName) ->
     file:copy(FileName, ?LATEST_SNAPSHOT).
 
 run_test(ModuleName) ->
-    shell_default:c(ModuleName),
-    apply(ModuleName, test, []).
+    case c:c(ModuleName) of
+        {ok, ModuleName} ->
+            apply(ModuleName, test, []);
+	error ->
+	    void
+    end.
 
 file_name(ModuleName) ->
     atom_to_list(ModuleName) ++ ".erl".
