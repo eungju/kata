@@ -74,27 +74,27 @@ worker_test() ->
 	     end,
     ?assertMatch(true, Result).
 
-plan_split(NumberOfChunks, Length) ->
-    D = Length div NumberOfChunks,
-    R = Length rem NumberOfChunks,
+distribute_fairly(Whole, NumberOfChunks) ->
+    D = Whole div NumberOfChunks,
+    R = Whole rem NumberOfChunks,
     lists:duplicate(R, D + 1) ++ lists:duplicate(NumberOfChunks - R, D).
 
-plan_split_test_() ->
-    [?_assertMatch([1, 1], plan_split(2, 2)),
-     ?_assertMatch([2, 1], plan_split(2, 3)),
-     ?_assertMatch([1, 0, 0], plan_split(3, 1))].
+distribute_fairly_test_() ->
+    [?_assertMatch([1, 1], distribute_fairly(2, 2)),
+     ?_assertMatch([2, 1], distribute_fairly(3, 2)),
+     ?_assertMatch([1, 0, 0], distribute_fairly(1, 3))].
 
-split(NumberOfChunks, L) ->
-    split(plan_split(NumberOfChunks, length(L)), L, []).
-split([], _, Acc) ->
+divide_into(L, NumberOfChunks) ->
+    divide_into(L, distribute_fairly(length(L), NumberOfChunks), []).
+divide_into(_, [], Acc) ->
     Acc;
-split([H|T], L, Acc) ->
+divide_into(L, [H|T], Acc) ->
     {L1, L2} = lists:split(H, L),
-    split(T, L2, [L1|Acc]).
+    divide_into(L2, T, [L1|Acc]).
 
-split_test_() ->
-    [?_assertMatch([[1,2], [3], [4]], lists:reverse(split(3, [1,2,3,4]))),
-     ?_assertMatch([[1], [], []], lists:reverse(split(3, [1])))].
+divide_into_test_() ->
+    [?_assertMatch([[1,2], [3], [4]], lists:reverse(divide_into([1,2,3,4], 3))),
+     ?_assertMatch([[1], [], []], lists:reverse(divide_into([1], 3)))].
 
 start_workers(N) ->
     lists:map(fun(_) -> spawn(fun worker/0) end, lists:seq(1, N)).
@@ -108,7 +108,7 @@ send_chunk(Worker, Chunk) ->
 pmax_cycle(L) ->
     Workers = start_workers(32),
     lists:foreach(fun({W, C}) -> send_chunk(W, C) end,
-		  lists:zip(Workers, split(length(Workers), L))),
+		  lists:zip(Workers, divide_into(L, length(Workers)))),
     stop_workers(Workers),
     reduce(length(Workers)).
 
