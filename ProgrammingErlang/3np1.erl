@@ -6,13 +6,10 @@ cycle(N) ->
     cycle(N, 0).
 cycle(1, Acc) ->
     Acc + 1;
+cycle(N, Acc) when N rem 2 =:= 0 ->
+    cycle(N div 2, Acc + 1);
 cycle(N, Acc) ->
-    if
-	N rem 2 =:= 0 ->
-	    cycle(N div 2, Acc + 1);
-	true ->
-	    cycle(N * 3 + 1, Acc + 1)
-    end.
+    cycle(N * 3 + 1, Acc + 1).
 
 cycle_test_() ->
     [?_assertMatch(1, cycle(1)),
@@ -77,26 +74,18 @@ worker_test() ->
 	     end,
     ?assertMatch(true, Result).
 
-for(Func, L) ->
-    lists:map(Func, lists:zip(lists:seq(1, length(L)), L)).
-
-plan_split(NumberOfChunks, L) ->
-    F = fun({Nth, X}) ->
-		if Nth > (length(L) rem NumberOfChunks) ->
-			X;
-		   true ->
-			X + 1
-		end
-	end,
-    for(F, lists:duplicate(NumberOfChunks, length(L) div NumberOfChunks)).
+plan_split(NumberOfChunks, Length) ->
+    D = Length div NumberOfChunks,
+    R = Length rem NumberOfChunks,
+    lists:duplicate(R, D + 1) ++ lists:duplicate(NumberOfChunks - R, D).
 
 plan_split_test_() ->
-    [?_assertMatch([1, 1], plan_split(2, [1,2])),
-     ?_assertMatch([2, 1], plan_split(2, [1,2,3])),
-     ?_assertMatch([1, 0, 0], plan_split(3, [1]))].
+    [?_assertMatch([1, 1], plan_split(2, 2)),
+     ?_assertMatch([2, 1], plan_split(2, 3)),
+     ?_assertMatch([1, 0, 0], plan_split(3, 1))].
 
 split(NumberOfChunks, L) ->
-    split(plan_split(NumberOfChunks, L), L, []).
+    split(plan_split(NumberOfChunks, length(L)), L, []).
 split([], _, Acc) ->
     Acc;
 split([H|T], L, Acc) ->
