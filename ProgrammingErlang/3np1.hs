@@ -1,3 +1,5 @@
+import Data.List
+
 distributeFairly nelements nchunk = luckyOnes ++ unluckyOnes
     where
       atLeast = (div nelements nchunk)
@@ -20,6 +22,8 @@ step n = step n 1
                  | otherwise = step (3 * a + 1) (acc + 1)
 
 maximum_step xs = maximum (map step xs)
+    where
+      maximum = foldl1' max
 
 main = putStrLn (show (maximum_step [1..1000000]))
 
