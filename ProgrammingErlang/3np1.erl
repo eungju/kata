@@ -1,9 +1,13 @@
 -module('3np1').
 -include_lib("eunit/include/eunit.hrl").
--export([max_cycle/1, max_cycle_upto/1, pmax_cycle/1, pmax_cycle_upto/1, benchmark/0]).
+-export([max_cycle/1, max_cycle_upto/1]).
+-export([pmax_cycle/1, pmax_cycle_upto/1]).
+-export([dmax_cycle/2, dmax_cycle_upto/2]).
+-export([benchmark/0]).
 
 cycle(N) ->
     cycle(N, 0).
+			
 cycle(1, Acc) ->
     Acc + 1;
 cycle(N, Acc) when N rem 2 =:= 0 ->
@@ -33,6 +37,8 @@ reduce(0, Max) ->
     Max;
 reduce(M, Max) ->
     receive
+	{'EXIT', _, _} ->
+	    reduce(M, Max);
 	Cycle when Cycle > Max ->
 	    reduce(M - 1, Cycle);
 	_ ->
@@ -96,20 +102,14 @@ divide_into_test_() ->
     [?_assertMatch([[1,2], [3], [4]], lists:reverse(divide_into([1,2,3,4], 3))),
      ?_assertMatch([[1], [], []], lists:reverse(divide_into([1], 3)))].
 
-start_workers(N) ->
-    lists:map(fun(_) -> spawn(fun worker/0) end, lists:seq(1, N)).
-
-stop_workers(Workers) ->
-    lists:foreach(fun(Worker) -> Worker ! stop end, Workers).
-
 send_chunk(Worker, Chunk) ->
     Worker ! {self(), Chunk}.
     
 pmax_cycle(L) ->
-    Workers = start_workers(32),
+    Workers = lists:map(fun(_) -> spawn_link(fun worker/0) end, lists:seq(1, 32)),
     lists:foreach(fun({W, C}) -> send_chunk(W, C) end,
 		  lists:zip(Workers, divide_into(L, length(Workers)))),
-    stop_workers(Workers),
+    lists:foreach(fun(Worker) -> Worker ! stop end, Workers),
     reduce(length(Workers)).
 
 pmax_cycle_upto(M) ->
@@ -118,10 +118,24 @@ pmax_cycle_upto(M) ->
 pmax_cycle_test() ->
     ?assertMatch(20, pmax_cycle_upto(10)).
 
+dmax_cycle(Nodes, L) ->
+    Workers = lists:map(fun(I) -> spawn_link(lists:nth((I - 1) rem length(Nodes) + 1, Nodes), fun worker/0) end, lists:seq(1, 32)),
+    lists:foreach(fun({W, C}) -> send_chunk(W, C) end,
+		  lists:zip(Workers, divide_into(L, length(Workers)))),
+    lists:foreach(fun(Worker) -> Worker ! stop end, Workers),
+    reduce(length(Workers)).
+
+dmax_cycle_upto(Nodes, M) ->
+    dmax_cycle(Nodes, lists:seq(1, M)).
+
+dmax_cycle_test() ->
+    ?assertMatch(20, dmax_cycle_upto([node()], 10)).
+
 benchmark() ->
-    Args = [lists:seq(1, 1000000)],
-    {T1, _} = timer:tc(?MODULE, max_cycle, Args),
-    {T2, _} = timer:tc(?MODULE, pmax_cycle, Args),
+    Args = lists:seq(1, 1000000),
+    {T1, _} = timer:tc(?MODULE, max_cycle, [Args]),
     io:format("max_cycle: ~wms.~n", [T1 / 1000]),
-    io:format("pmax_cycle: ~wms.~n", [T2 / 1000]).
-			      
+    {T2, _} = timer:tc(?MODULE, pmax_cycle, [Args]),
+    io:format("pmax_cycle: ~wms.~n", [T2 / 1000]),
+    {T3, _} = timer:tc(?MODULE, dmax_cycle, [[s1@juno.local,s2@juno.local], Args]),
+    io:format("dmax_cycle: ~wms.~n", [T3 / 1000]).			      
