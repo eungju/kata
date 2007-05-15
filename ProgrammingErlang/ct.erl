@@ -11,29 +11,23 @@
 -define(TEST_FILE, "dut.txt").
 -define(TEST_MODULE, dut).
 
-is_modified(Filename, LastModified) ->
-    case filelib:last_modified(Filename) of
+is_modified(FileName, LastModified) ->
+    case filelib:last_modified(FileName) of
 	LastModified ->
 	    false;
 	_ -> true
     end.
 
-sleep(Millisecond)->
-    receive
-    after Millisecond ->
-	    void
-    end.
-
-touch(Filename) ->
-    {ok, S} = file:open(Filename, write),
-    io:format(S, "hello", []),
+touch(FileName) ->
+    {ok, S} = file:open(FileName, write),
+    io:format(S, "touch", []),
     file:close(S).
 
 is_modified_test() ->
     touch(?TEST_FILE),
     Modified = filelib:last_modified("dut.txt"),
     ?assertMatch(false, is_modified("dut.txt", Modified)),
-    sleep(?MTIME_PRECISION),
+    timer:sleep(?MTIME_PRECISION),
     touch(?TEST_FILE),
     ?assertMatch(true, is_modified("dut.txt", Modified)).
 
@@ -43,13 +37,13 @@ watch_loop(ModuleName, Callback) ->
 watch_loop(ModuleName, Callback, LastModified) ->    
     receive
 	stop ->
-	    true
+	    void
     after ?MTIME_PRECISION ->
 	    case is_modified(file_name(ModuleName), LastModified) of
 		true ->
 		    Callback(ModuleName);
 		false ->
-		    false
+		    void
 	    end,
 	    ?MODULE:watch_loop(ModuleName, Callback,
 		       filelib:last_modified(file_name(ModuleName)))
@@ -69,13 +63,13 @@ callback_test() ->
     stop(Pid),
     ?assertMatch(true, Invoked).
 
-diff(Old, New) ->
-    os:cmd("diff -u " ++ Old ++ " " ++ New).
+show_diff(Old, New) ->
+    io:put_chars(os:cmd("diff -u " ++ Old ++ " " ++ New)).
 
 snapshot(FileName) ->
     file:copy(FileName, ?LATEST_SNAPSHOT).
 
-run_test(ModuleName) ->
+test_module(ModuleName) ->
     case c:c(ModuleName) of
         {ok, ModuleName} ->
             apply(ModuleName, test, []);
@@ -86,13 +80,13 @@ run_test(ModuleName) ->
 file_name(ModuleName) ->
     atom_to_list(ModuleName) ++ ".erl".
 
-continuous_test(ModuleName) ->
-    io:put_chars(diff(?LATEST_SNAPSHOT, file_name(ModuleName))),
+continuous_testing(ModuleName) ->
+    show_diff(?LATEST_SNAPSHOT, file_name(ModuleName)),
     snapshot(file_name(ModuleName)),
-    run_test(ModuleName).
+    test_module(ModuleName).
 
 start(ModuleName) ->
-    spawn(ct, watch_loop, [ModuleName, fun continuous_test/1]).
+    spawn(?MODULE, watch_loop, [ModuleName, fun continuous_testing/1]).
 
 stop(Pid) ->
     Pid ! stop.
