@@ -1,4 +1,5 @@
 import Char
+import Test.HUnit
 
 type Digit = Char
 
@@ -9,35 +10,45 @@ oneTwos = oneTwos 1
                 | otherwise = 2:oneTwos 1
 
 luhnChecksum :: [Digit] -> Int
-luhnChecksum digits = sum (map weight (zip (reverse (map digitToInt digits)) oneTwos))
+luhnChecksum digits = sum (map weight pairs)
     where
+      pairs = zip (reverse (map digitToInt digits)) oneTwos
       weight (x, y) = if x * y > 9 then x * y - 9 else x * y
 
 luhn :: [Digit] -> Bool
 luhn digits = rem (luhnChecksum digits) 10 == 0
 
-lengthIs :: Int -> [Digit] -> Bool
-lengthIs expected digits = length digits == expected
+lengthIs :: Int -> [a] -> Bool
+lengthIs expected xs = length xs == expected
 
-lengthIsOneOf :: [Int] -> [Digit] -> Bool
-lengthIsOneOf ls digits = or (map (\x -> lengthIs x digits) ls)
+beginsWith :: Eq a => [a] -> [a] -> Bool
+beginsWith expected xs = take (length expected) xs == expected
 
-beginsWith :: [Digit] -> [Digit] -> Bool
-beginsWith expected digits = take (length expected) digits == expected
+range :: Int -> Int -> [[Digit]]
+range s e = map show [s..e]
 
-beginsWithOneOf :: [[Digit]] -> [Digit] -> Bool
-beginsWithOneOf ls digits = or (map (\x -> beginsWith x digits) ls)
+satisfyAny :: [a -> Bool] -> a -> Bool
+satisfyAny predicates x = or (map (\p -> p x) predicates)
 
-range :: [Digit] -> [Digit] -> [[Digit]]
-range s e = map show [(read s :: Int)..(read e :: Int)]
+satisfyAll :: [a -> Bool] -> a -> Bool
+satisfyAll predicates x = and (map (\p -> p x) predicates)
 
-satisfyAll :: [(a -> Bool)] -> a -> Bool
-satisfyAll predicates value = and (map (\p -> p value) predicates)
+lengthIsOneOf :: [Int] -> [a] -> Bool
+lengthIsOneOf es xs = satisfyAny (map lengthIs es) xs
+
+beginsWithOneOf :: Eq a => [[a]] -> [a] -> Bool
+beginsWithOneOf es xs = satisfyAny (map beginsWith es) xs
 
 guessType :: [Digit] -> [String]
-guessType digits = [name | (name, discriminant) <- types, satisfyAll discriminant digits]
+guessType digits = [name | (name, discriminant) <- types, discriminant digits]
     where
-      types = [("AMEX", [beginsWithOneOf ["34", "37"], lengthIs 15]),
-               ("Discover", [beginsWith "6011", lengthIs 16]),
-               ("MasterCard", [beginsWithOneOf (range "51" "55"), lengthIs 16]),
-               ("Visa", [beginsWith "4", lengthIsOneOf [13,16]])]
+      types = [("AMEX", satisfyAll [beginsWithOneOf ["34", "37"], lengthIs 15]),
+               ("Discover", satisfyAll [beginsWith "6011", lengthIs 16]),
+               ("MasterCard", satisfyAll [beginsWithOneOf (range 51 55), lengthIs 16]),
+               ("Visa", satisfyAll [beginsWith "4", lengthIsOneOf [13,16]])]
+
+testLengthIsOneOf = TestCase (assertEqual "lengthIsOneOf [3] 123" True (lengthIsOneOf [3] "123"))
+
+testVisa = TestCase (assertEqual "should be a visa" ["Visa"] (guessType "4417123456789112"))
+
+tests = TestList [testLengthIsOneOf, testVisa]
