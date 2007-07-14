@@ -91,7 +91,7 @@ spiral_array(Size) ->
     array(Size, spiral(Size)).
 
 benchmark() ->
-    Size = 10000,
+    Size = 1000,
     {SpiralTime, Spiral} = timer:tc(?MODULE, spiral, [Size]),
     {ArrayTime, _Array} = timer:tc(?MODULE, array, [Size, Spiral]),
     io:format("spiral: ~p, array: ~p~n",
