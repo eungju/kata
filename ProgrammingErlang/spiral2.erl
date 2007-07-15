@@ -35,15 +35,17 @@ shell_test_() ->
     [?_assertMatch(1, shell({1,1}, 5)),
      ?_assertMatch(1, shell({5,5}, 5)),
      ?_assertMatch(3, shell({3,3}, 5)),
-     ?_assertMatch(1, shell({2, 1}, 5))].
+     ?_assertMatch(1, shell({2,1}, 5))].
 
 n({X, Y}, Size) ->
     Nth = shell({X,Y}, Size),
+    DX = (X - 1 - (Nth - 1)),
+    DY = (Y - 1 - (Nth - 1)),
     if
 	X >= Y ->
-	    spiral_length(Nth - 1, Size) + (X - 1 - (Nth - 1)) + (Y - 1 - (Nth - 1)) + 1;
+	    spiral_length(Nth - 1, Size) + DX + DY + 1;
 	true ->
-	    spiral_length(Nth, Size) - (X - 1 - (Nth - 1)) - (Y - 1 - (Nth - 1)) + 1
+	    spiral_length(Nth, Size) - DX - DY + 1
     end.
 
 n_test_() ->
