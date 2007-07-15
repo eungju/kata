@@ -45,6 +45,36 @@ operand_k22(Labels, A, {K22}) ->
 operand_A5_b3(Labels, A, {A5, B3}) ->
     {A5, B3}.
 
+operand_Rd3_Rr3(Labels, A, {Rd3, Rr3}) ->
+    {register_addr(Rd3) - 16, register_addr(Rr3) - 16}.
+
+operand_Rd5_A6(Labels, A, {Rd5, A6}) ->
+    {register_addr(Rd5), A6}.
+
+operand_Rd5_k16(Labels, A, {Rd5, K16}) ->
+    {register_addr(Rd5), K16}.
+
+operand_2Rd4_2Rr4(Labels, A, {Rd4, Rr4}) ->
+    {register_addr(Rd4) div 2, register_addr(Rr4) div 2}.
+
+operand_Rd4_Rr4(Labels, A, {Rd4, Rr4}) ->
+    {register_addr(Rd4) - 16, register_addr(Rr4) - 16}.
+
+operand_A6_Rr5(Labels, A, {A6, Rr5}) ->
+    {A6, register_addr(Rr5)}.
+
+operand_Rr5(Labels, A, {Rr5}) ->
+    operand_Rd5(Labels, A, {Rr5}).
+
+operand_k12(Labels, A, {K12}) ->
+    {pc_relative_addr(labels_fetch(K12, Labels), A)}.
+
+operand_Rr5_b3(Labels, A, {Rr5, B3}) ->
+    operand_Rd5_b3(Labels, A, {Rr5, B3}).
+
+operand_Rr5_q5(Labels, A, {Rr5, Q5}) ->
+    {register_addr(Rr5), Q5}.
+
 operand_none_test() ->
     ?assertMatch({}, operand_none(labels_new(), 0, {})).
 
@@ -89,6 +119,37 @@ operand_k22_test() ->
 
 operand_A5_b3_test() ->
     ?assertMatch({31, 7}, operand_A5_b3(labels_new(), 0, {31, 7})).
+
+operand_Rd3_Rr3_test() ->
+    ?_assertMatch({7, 7}, operand_Rd3_Rr3(labels_new(), 0, {r23, r23})).
+
+operand_Rd5_A6_test() ->
+    ?_assertMatch({31, 63}, operand_Rd5_A6(labels_new(), 0, {r31, 63})).
+
+operand_Rd5_k16_test() ->
+    ?_assertMatch({31, 65535}, operand_Rd5_k16(labels_new(), 0, {r31, 65535})).
+
+operand_2Rd4_2Rr4_test() ->
+    ?_assertMatch({1, 15}, operand_2Rd4_2Rr4(labels_new(), 0, {r2, r30})).
+
+operand_Rd4_Rr4_test() ->
+    ?_assertMatch({0, 15}, operand_Rd4_Rr4(labels_new(), 0, {r16, r31})).
+
+operand_A6_Rr5_test() ->
+    ?_assertMatch({63, 31}, operand_A6_Rr5(labels_new(), 0, {63, r31})).
+
+operand_Rr5_test() ->
+    ?assertMatch({31}, operand_Rr5(labels_new(), 0, {r31})).
+
+operand_k12_test() ->
+    Labels = labels_add(l1, 2048, labels_new()),
+    ?assertMatch({2047}, operand_k12(Labels, 0, {l1})).
+
+operand_Rr5_b3_test() ->
+    ?assertMatch({31, 7}, operand_Rr5_b3(labels_new(), 0, {r31, 7})).
+
+operand_Rr5_q5_test() ->
+    ?assertMatch({31, 63}, operand_Rr5_q5(labels_new(), 0, {r31, 63})).
 
 instruction(Name) ->
     case Name of
@@ -194,15 +255,161 @@ instruction(Name) ->
 	    {1, fun operand_none/3};
 	eijmp ->
 	    {1, fun operand_none/3};
-
+	elpm ->
+	    {1, fun operand_none/3};
+	elpmz ->
+	    {1, fun operand_Rd5/3};
+	elpmzi ->
+	    {1, fun operand_Rd5/3};
+	eor ->
+	    {1, fun operand_Rd5_Rr5/3};
+	fmul ->
+	    {1, fun operand_Rd3_Rr3/3};
+	fmuls ->
+	    {1, fun operand_Rd3_Rr3/3};
+	fmulsu ->
+	    {1, fun operand_Rd3_Rr3/3};
+	icall ->
+	    {1, fun operand_none/3};
+	ijmp ->
+	    {1, fun operand_none/3};
+	in ->
+	    {1, fun operand_Rd5_A6/3};
+	inc ->
+	    {1, fun operand_Rd5/3};
+	jmp ->
+	    {1, fun operand_k22/3};
+	ldx ->
+	    {1, fun operand_Rd5/3};
+	ldxi ->
+	    {1, fun operand_Rd5/3};
+	ldxd ->
+	    {1, fun operand_Rd5/3};
+	ldy ->
+	    {1, fun operand_Rd5/3};
+	ldyi ->
+	    {1, fun operand_Rd5/3};
+	ldyd ->
+	    {1, fun operand_Rd5/3};
+	ldz ->
+	    {1, fun operand_Rd5/3};
+	ldzi ->
+	    {1, fun operand_Rd5/3};
+	ldzd ->
+	    {1, fun operand_Rd5/3};
 	ldi ->
 	    {1, fun operand_Rd4_K8/3};
+	lds ->
+	    {2, fun operand_Rd5_k16/3};
+	lpm ->
+	    {1, fun operand_none/3};
+	lpmz ->
+	    {1, fun operand_Rd5/3};
+	lpmzi ->
+	    {1, fun operand_Rd5/3};
+	lsl ->
+	    {1, fun operand_Rd5/3};
+	lsr ->
+	    {1, fun operand_Rd5/3};
+	mov ->
+	    {1, fun operand_Rd5_Rr5/3};
+	movw ->
+	    {1, fun operand_2Rd4_2Rr4/3};
+	mul ->
+	    {1, fun operand_Rd5_Rr5/3};
+	muls ->
+	    {1, fun operand_Rd4_Rr4/3};
+	mulsu ->
+	    {1, fun operand_Rd3_Rr3/3};       
+	neg ->
+	    {1, fun operand_Rd5/3};
 	nop ->
 	    {1, fun operand_none/3};
+	or_ ->
+	    {1, fun operand_Rd5_Rr5/3};
+	ori_ ->
+	    {1, fun operand_Rd4_K8/3};
+	out_ ->
+	    {1, fun operand_A6_Rr5/3};
+	pop_ ->
+	    {1, fun operand_Rd5/3};
+	push_ ->
+	    {1, fun operand_Rr5/3};
+	rcall_ ->
+	    {1, fun operand_k12/3};
+	ret_ ->
+	    {1, fun operand_none/3};
+	reti_ ->
+	    {1, fun operand_none/3};
+	rjmp_ ->
+	    {1, fun operand_k12/3};
+	rol_ ->
+	    {1, fun operand_Rd5/3};
+	ror_ ->
+	    {1, fun operand_Rd5/3};
+	sbc_ ->
+	    {1, fun operand_Rd5_Rr5/3};
+	sbci_ ->
+	    {1, fun operand_Rd4_K8/3};
+	sbi_ ->
+	    {1, fun operand_A5_b3/3};
+	sbic_ ->
+	    {1, fun operand_A5_b3/3};
+	sbis_ ->
+	    {1, fun operand_A5_b3/3};
+	sbiw_ ->
+	    {1, fun operand_Rd2_K6/3};
+	sbr_ ->
+	    {1, fun operand_Rd4_K8/3};
+	sbrc_ ->
+	    {1, fun operand_Rr5_b3/3};
+	sbrs_ ->
+	    {1, fun operand_Rr5_b3/3};
 	sec ->
+	    {1, fun operand_none/3};
+	seh ->
+	    {1, fun operand_none/3};
+	sei ->
+	    {1, fun operand_none/3};
+	sen ->
 	    {1, fun operand_none/3};
 	ser ->
 	    {1, fun operand_Rd4/3};
+	ses ->
+	    {1, fun operand_none/3};
+	set ->
+	    {1, fun operand_none/3};
+	sev ->
+	    {1, fun operand_none/3};
+	sez ->
+	    {1, fun operand_none/3};
+	sleep ->
+	    {1, fun operand_none/3};
+	spm ->
+	    {1, fun operand_none/3};
+	stx ->
+	    {1, fun operand_Rr5/3};
+	stxi ->
+	    {1, fun operand_Rr5/3};
+	stxd ->
+	    {1, fun operand_Rr5/3};
+	sty ->
+	    {1, fun operand_Rr5/3};
+	styi ->
+	    {1, fun operand_Rr5/3};
+	styd ->
+	    {1, fun operand_Rr5/3};
+	stdy ->
+	    {1, fun operand_Rr5_q5/3};
+	stz ->
+	    {1, fun operand_Rr5/3};
+	stzi ->
+	    {1, fun operand_Rr5/3};
+	stzd ->
+	    {1, fun operand_Rr5/3};
+	stdz ->
+	    {1, fun operand_Rr5_q5/3};
+
 	tst ->
 	    {1, fun operand_Rd5Rd5/3};
 	_ ->

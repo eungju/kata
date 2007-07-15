@@ -1,6 +1,5 @@
 -module(spiral).
--export([spiral/1, array/2, spiral_array/1, benchmark/0]).
--compile(export_all).
+-export([spiral/1, array/2, spiral_array/1, benchmark/0, profile/0]).
 
 forward({X, Y}, east) ->
     {X + 1, Y};

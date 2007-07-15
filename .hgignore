@@ -1,10 +1,13 @@
 syntax: glob
 
 *~
+\#*\#
 .*.swp
 *.elc
 *.pyc
 *.pyo
 *.beam
 erl_crash.dump
-
+*.o
+a.out
+*.hi
