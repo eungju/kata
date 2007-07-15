@@ -96,3 +96,14 @@ benchmark() ->
     {ArrayTime, _Array} = timer:tc(?MODULE, array, [Size, Spiral]),
     io:format("spiral: ~p, array: ~p~n",
 	      [SpiralTime / 1000000, ArrayTime / 1000000]).
+
+profile() ->
+    Size = 100,
+    cprof:start(),
+    spiral_array(Size),
+    cprof:pause(),
+    io:format("~p~n", [cprof:analyse(?MODULE)]),
+    cprof:stop(),
+    fprof:apply(?MODULE, spiral_array, [Size]),
+    fprof:profile(),
+    fprof:analyse([{dest, ""}]).
