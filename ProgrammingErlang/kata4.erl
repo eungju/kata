@@ -65,10 +65,7 @@ weather_main() ->
 team(Line) ->
     Tokens = string:tokens(Line," "),
     Name = lists:nth(2, Tokens),
-    F1 = lists:nth(7, Tokens),
-    F2 = lists:nth(9, Tokens),
-    [V1,V2] = lists:map(fun list_to_integer/1, [F1,F2]),
-    {Name,V1,V2}.
+    {Name,list_to_integer(lists:nth(7, Tokens)),list_to_integer(lists:nth(9, Tokens))}.
 
 is_team(Line) ->
     Tokens = string:tokens(Line, " "),
