@@ -30,16 +30,12 @@ is_weather_test_() ->
      ?_assertMatch(false, is_weather("  Dy MxT   MnT   AvT   HDDay  AvDP 1HrP TPcpn WxType PDir AvSp Dir MxS SkyC MxR MnR AvSLP"))].
 
 min_var([H|T]) ->
-    min_var(T,H).
-min_var([], Min) ->
-    Min;
-min_var([{_,V1,V2}=H|T], {_,MV1,MV2}=Min) ->
-    if
- 	abs(V1 - V2) < abs(MV1 - MV2) ->
- 	    min_var(T,H);
- 	true ->
- 	    min_var(T,Min)
-    end.
+    lists:foldl(fun({_,V1,V2}=X, {_,MV1,MV2}=Min) ->
+			if
+			    abs(V1 - V2) < abs(MV1 - MV2) -> X;
+			    true -> Min
+			end
+		end, H, T).
 
 min_var_test_() ->
     [?_assertMatch({1,1,1}, min_var([{1,1,1}])),
