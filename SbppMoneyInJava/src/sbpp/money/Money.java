@@ -1,6 +1,6 @@
 package sbpp.money;
 
 public class Money {
-	Number amount;
-	String currency;
+	private Number amount;
+	private String currency;
 }
