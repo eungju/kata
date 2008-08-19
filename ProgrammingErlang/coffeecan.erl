@@ -18,11 +18,13 @@ last_bean(W, B) ->
     end.
 
 choose(W, B) ->
-    choose(lists:concat([lists:duplicate(W, white), lists:duplicate(B, black)]),
- 2, []).
+    choose(W, B, 2, []).
 
-choose(_S, 0, Acc) ->
+choose(_W, _B, 0, Acc) ->
     Acc;
-choose(S, N, Acc) ->
-    P = lists:nth(random:uniform(length(S)), S),
-    choose(lists:delete(P, S), N - 1, [P|Acc]).
+choose(W, B, N, Acc) ->
+    X = random:uniform(W + B),
+    if
+	X =< W -> choose(W - 1, B, N - 1, [white|Acc]);
+	true -> choose(W, B - 1, N - 1, [black|Acc])
+    end.
