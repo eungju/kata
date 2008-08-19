@@ -18,10 +18,8 @@ last_bean(W, B) ->
     end.
 
 choose(W, B) ->
-    MAX_W = lists:min([W, 2]),
-    MAX_B = lists:min([B, 2]),
-    MIN_W = 2 - MAX_B,
-    lists:nth(select(lists:seq(MIN_W, MAX_W)) + 1, [{black, black}, {black, white}, {white, white}]).
-
-select(L) ->
-    lists:nth(random:uniform(length(L)), L).
+    S0 = lists:concat([lists:duplicate(W, white), lists:duplicate(B, black)]),
+    P1 = lists:nth(random:uniform(length(S0)), S0),
+    S1 = lists:delete(P1, S0),
+    P2 = lists:nth(random:uniform(length(S1)), S1),
+    {P1, P2}.
