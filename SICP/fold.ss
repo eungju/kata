@@ -1,6 +1,6 @@
 (define (foldl f initial xs)
   (if (null? xs)
-      acc
+      initial
       (foldl f (f initial (car xs)) (cdr xs))))
 
 (define (foldr f initial xs)
