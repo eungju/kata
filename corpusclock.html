@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>The Corpus Clock</title>
+</head>
+<body>
+<h1>The Corpus Clock</h1>
+
+<canvas id="canvas" width="400" height="400"></canvas>
+
+<script type="text/javascript">
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+
+function drawBackground() {
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, 400, 400);
+}
+
+function scale(value, a, b) {
+  return (value / a) * b;
+}
+
+var PI = 3.141592;
+var TWO_PI = 2 * PI;
+var HALF_PI = PI / 2;
+
+function drawHands() {
+  var now = new Date();
+  var h = now.getHours() % 12;
+  var m = now.getMinutes();
+  var s = now.getSeconds();
+  var ms = now.getTime() % 1000;
+
+  drawHand(scale(h, 12, TWO_PI) - HALF_PI, 150, 8);
+  drawHand(scale(m, 60, TWO_PI) - HALF_PI, 170, 6);
+  if (Math.abs(scale(s, 60, TWO_PI) - scale(ms, 1000, TWO_PI)) < 0.4) {
+    drawHand(scale(s, 60, TWO_PI) - HALF_PI, 190, 6);
+  }
+  drawHand(scale(ms, 1000, TWO_PI) - HALF_PI, 190, 2);
+}
+
+function drawHand(rad, pos, width) {
+  ctx.strokeStyle = "#00FF00";
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.moveTo(200 + Math.cos(rad) * (pos - 15), 200 + Math.sin(rad) * (pos - 15));
+  ctx.lineTo(200 + Math.cos(rad) * pos, 200 + Math.sin(rad) * pos);
+  ctx.stroke();
+}
+
+function loop() {
+  drawBackground();
+  drawHands();
+}
+
+setInterval(loop, 1);
+</script>
+
+</body>
+</html>
