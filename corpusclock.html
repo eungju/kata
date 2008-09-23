@@ -6,46 +6,54 @@
 <body>
 <h1>The Corpus Clock</h1>
 
-<canvas id="canvas" width="400" height="400"></canvas>
+<canvas id="canvas" width="600" height="600"></canvas>
 
 <script type="text/javascript">
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
+var center = {x: canvas.width / 2, y: canvas.height / 2};
+var radius = canvas.width / 2;
+var gap = radius / 10;
+var TWO_PI = Math.PI * 2;
+var HALF_PI = Math.PI / 2;
 
 function drawBackground() {
   ctx.fillStyle = "#000000";
-  ctx.fillRect(0, 0, 400, 400);
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, radius, 0, TWO_PI, false);
+  ctx.closePath();
+  ctx.fill();
+  for (var r = 0; r < TWO_PI; r += HALF_PI) {
+   drawHand(r, radius, 1);
+  }
 }
 
 function scale(value, a, b) {
   return (value / a) * b;
 }
 
-var PI = 3.141592;
-var TWO_PI = 2 * PI;
-var HALF_PI = PI / 2;
-
 function drawHands() {
   var now = new Date();
-  var h = now.getHours() % 12;
-  var m = now.getMinutes();
-  var s = now.getSeconds();
-  var ms = now.getTime() % 1000;
+  var h = scale(now.getHours() % 12, 12, TWO_PI) - HALF_PI;
+  var m = scale(now.getMinutes(), 60, TWO_PI) - HALF_PI;
+  var s = scale(now.getSeconds(), 60, TWO_PI) - HALF_PI;
+  var ms = scale(now.getTime() % 1000, 1000, TWO_PI) - HALF_PI;
 
-  drawHand(scale(h, 12, TWO_PI) - HALF_PI, 150, 8);
-  drawHand(scale(m, 60, TWO_PI) - HALF_PI, 170, 6);
-  if (Math.abs(scale(s, 60, TWO_PI) - scale(ms, 1000, TWO_PI)) < 0.4) {
-    drawHand(scale(s, 60, TWO_PI) - HALF_PI, 190, 6);
+  drawHand(h, radius - gap * 3, gap * 0.5);
+  drawHand(m, radius - gap * 2, gap * 0.5);
+  if (Math.abs(s - ms) < 0.4) {
+    drawHand(s, radius - gap, gap * 0.5);
   }
-  drawHand(scale(ms, 1000, TWO_PI) - HALF_PI, 190, 2);
+  drawHand(ms, radius - gap, gap * 0.05);
 }
 
 function drawHand(rad, pos, width) {
   ctx.strokeStyle = "#00FF00";
   ctx.lineWidth = width;
+  ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(200 + Math.cos(rad) * (pos - 15), 200 + Math.sin(rad) * (pos - 15));
-  ctx.lineTo(200 + Math.cos(rad) * pos, 200 + Math.sin(rad) * pos);
+  ctx.moveTo(center.x + Math.cos(rad) * (pos - gap * 0.8), center.y + Math.sin(rad) * (pos - gap * 0.8));
+  ctx.lineTo(center.x + Math.cos(rad) * pos, center.y + Math.sin(rad) * pos);
   ctx.stroke();
 }
 
@@ -54,7 +62,7 @@ function loop() {
   drawHands();
 }
 
-setInterval(loop, 1);
+setInterval(loop, 10);
 </script>
 
 </body>
