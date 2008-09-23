@@ -37,14 +37,16 @@ function drawHands() {
   var h = scale(now.getHours() % 12, 12, TWO_PI) - HALF_PI;
   var m = scale(now.getMinutes(), 60, TWO_PI) - HALF_PI;
   var s = scale(now.getSeconds(), 60, TWO_PI) - HALF_PI;
-  var ms = scale(now.getTime() % 1000, 1000, TWO_PI) - HALF_PI;
+  var millis = now.getTime() % 1000;
+  var ms = scale(millis % 800, 800, TWO_PI) + s;
 
-  drawHand(h, radius - gap * 3, gap * 0.5);
-  drawHand(m, radius - gap * 2, gap * 0.5);
-  if (Math.abs(s - ms) < 0.4) {
+  drawHand(h, radius - gap * 5, gap * 0.5);
+  drawHand(m, radius - gap * 3, gap * 0.5);
+  if (millis < 800) {
+    drawHand(ms, radius - gap, gap * 0.05);
+  } else {
     drawHand(s, radius - gap, gap * 0.5);
   }
-  drawHand(ms, radius - gap, gap * 0.05);
 }
 
 function drawHand(rad, pos, width) {
@@ -52,7 +54,7 @@ function drawHand(rad, pos, width) {
   ctx.lineWidth = width;
   ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(center.x + Math.cos(rad) * (pos - gap * 0.8), center.y + Math.sin(rad) * (pos - gap * 0.8));
+  ctx.moveTo(center.x + Math.cos(rad) * (pos - gap), center.y + Math.sin(rad) * (pos - gap));
   ctx.lineTo(center.x + Math.cos(rad) * pos, center.y + Math.sin(rad) * pos);
   ctx.stroke();
 }
