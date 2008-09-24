@@ -23,8 +23,8 @@ function drawBackground() {
   ctx.arc(center.x, center.y, radius, 0, TWO_PI, false);
   ctx.closePath();
   ctx.fill();
-  for (var r = 0; r < TWO_PI; r += HALF_PI) {
-   drawHand(r, radius, 1);
+  for (var i = 0; i < 4; i++) {
+    drawHand(TWO_PI / 4 * i, radius, 2);
   }
 }
 
@@ -34,15 +34,15 @@ function scale(value, a, b) {
 
 function drawHands() {
   var now = new Date();
-  var h = scale(now.getHours() % 12, 12, TWO_PI) - HALF_PI;
-  var m = scale(now.getMinutes(), 60, TWO_PI) - HALF_PI;
-  var s = scale(now.getSeconds(), 60, TWO_PI) - HALF_PI;
   var millis = now.getTime() % 1000;
-  var ms = scale(millis % 800, 800, TWO_PI) + s;
+  var s = scale(now.getSeconds(), 60, TWO_PI) - HALF_PI;
+  var m = scale(now.getMinutes(), 60, TWO_PI) - HALF_PI + (s / 60);
+  var h = scale(now.getHours() % 12, 12, TWO_PI) - HALF_PI + (m / 12);
 
   drawHand(h, radius - gap * 5, gap * 0.5);
   drawHand(m, radius - gap * 3, gap * 0.5);
   if (millis < 800) {
+    var ms = scale(millis % 800, 800, TWO_PI) + s;
     drawHand(ms, radius - gap, gap * 0.05);
   } else {
     drawHand(s, radius - gap, gap * 0.5);
