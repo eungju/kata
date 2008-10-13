@@ -31,4 +31,8 @@ combination(A, B, C, D) ->
     fac(A + B + C + D) div (fac(A) * fac(B) * fac(C) * fac(D)).
 
 count_fast(N) ->
-    lists:sum([combination(A, B, C, D) || A <- lists:seq(0, N), B <- lists:seq(0, N - A), C <- lists:seq(0, N - A - B), D <- lists:seq(0, N - A - B - C), (A + 2 * B + 3 * C + D) =:= N]).
+    lists:sum([combination(A, B, C, D) ||
+		  A <- lists:seq(0, N), A =< N,
+		  B <- lists:seq(0, N - A), A + 2 * B =< N,
+		  C <- lists:seq(0, N - A - B), A + 2 * B + 3 * C =< N,
+		  D <- lists:seq(0, N - A - B - C), (A + 2 * B + 3 * C + D) =:= N]).
