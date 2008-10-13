@@ -17,5 +17,5 @@ count(N, Trial, Count) ->
 	Sum =:= N ->
 	    Count + 1;
 	true ->
-	    count(N, [1|Trial], Count) + count(N, [2|Trial], Count) + count(N, [3|Trial], Count) + count(N, [4|Trial], Count)
+	    lists:sum(lists:map(fun(X) -> count(N, [X|Trial], Count) end, lists:seq(1, 4)))
     end.
