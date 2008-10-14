@@ -1,9 +1,10 @@
-def count(N):
-    C = [1, 2, 5] + [None] * (N - 2)
-    for i in xrange(3, N + 1):
-        C[i] = 2 * C[i - 1] + C[i - 2] + C[i - 3]
-    return C[N]
+def count(n):
+    c = [1, 2, 5] + [None] * (n - 2)
+    for i in xrange(3, n + 1):
+        c[i] = 2 * c[i - 1] + c[i - 2] + c[i - 3]
+    return c[n]
 
+assert count(1) == 2
 assert count(2) == 5
 assert count(3) == 13
 assert count(4) == 33
