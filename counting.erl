@@ -34,24 +34,24 @@ count_fast(N) ->
     lists:sum([combination(A, B, C, D) ||
 		  A <- lists:seq(0, N), A =< N,
 		  B <- lists:seq(0, N - A), A + 2 * B =< N,
-		  C <- lists:seq(0, N - A - B), A + 2 * B + 3 * C =< N,
-		  D <- lists:seq(0, N - A - B - C), (A + 2 * B + 3 * C + D) =:= N]).
+		  C <- lists:seq(0, N - A - 2 * B), A + 2 * B + 3 * C =< N,
+		  D <- lists:seq(0, N - A - 2 * B - 3 * C), (A + 2 * B + 3 * C + D) =:= N]).
 
 count_fast_map(N) ->
     lists:sum(lists:map(fun({A,B,C,D}) ->combination(A,B,C,D) end,
 			[{A, B, C, D} ||
 			    A <- lists:seq(0, N), A =< N,
 			    B <- lists:seq(0, N - A), A + 2 * B =< N,
-			    C <- lists:seq(0, N - A - B), A + 2 * B + 3 * C =< N,
-			    D <- lists:seq(0, N - A - B - C), (A + 2 * B + 3 * C + D) =:= N])).
+			    C <- lists:seq(0, N - A - 2 * B), A + 2 * B + 3 * C =< N,
+			    D <- lists:seq(0, N - A - 2 * B - 3 * C), (A + 2 * B + 3 * C + D) =:= N])).
 
 count_fast_pmap(N) ->
     lists:sum(pmap(fun({A,B,C,D}) ->combination(A,B,C,D) end,
 		   [{A, B, C, D} ||
 		       A <- lists:seq(0, N), A =< N,
 		       B <- lists:seq(0, N - A), A + 2 * B =< N,
-		       C <- lists:seq(0, N - A - B), A + 2 * B + 3 * C =< N,
-		       D <- lists:seq(0, N - A - B - C), (A + 2 * B + 3 * C + D) =:= N],
+		       C <- lists:seq(0, N - A - 2 * B), A + 2 * B + 3 * C =< N,
+		       D <- lists:seq(0, N - A - 2 * B - 3 * C), (A + 2 * B + 3 * C + D) =:= N],
 		   [node()])).
 
 pmap(Fun, List, Nodes) ->
