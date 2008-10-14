@@ -1,6 +1,6 @@
 def count(n):
-    c = [1, 2, 5] + [None] * (n - 2)
-    for i in xrange(3, n + 1):
+    c = [None, 2, 5, 13] + [None] * (n - 3)
+    for i in xrange(4, n + 1):
         c[i] = 2 * c[i - 1] + c[i - 2] + c[i - 3]
     return c[n]
 
