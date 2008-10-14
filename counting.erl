@@ -32,27 +32,19 @@ combination(A, B, C, D) ->
 
 count_fast(N) ->
     lists:sum([combination(A, B, C, D) ||
-		  A <- lists:seq(0, N), A =< N,
-		  B <- lists:seq(0, N - A), A + 2 * B =< N,
-		  C <- lists:seq(0, N - A - 2 * B), A + 2 * B + 3 * C =< N,
+		  A <- lists:seq(0, N),
+		  B <- lists:seq(0, (N - A) div 2),
+		  C <- lists:seq(0, (N - A - 2 * B) div 3),
 		  D <- lists:seq(0, N - A - 2 * B - 3 * C), (A + 2 * B + 3 * C + D) =:= N]).
-
-count_fast_map(N) ->
-    lists:sum(lists:map(fun({A,B,C,D}) ->combination(A,B,C,D) end,
-			[{A, B, C, D} ||
-			    A <- lists:seq(0, N), A =< N,
-			    B <- lists:seq(0, N - A), A + 2 * B =< N,
-			    C <- lists:seq(0, N - A - 2 * B), A + 2 * B + 3 * C =< N,
-			    D <- lists:seq(0, N - A - 2 * B - 3 * C), (A + 2 * B + 3 * C + D) =:= N])).
 
 count_fast_pmap(N) ->
     lists:sum(pmap(fun({A,B,C,D}) ->combination(A,B,C,D) end,
 		   [{A, B, C, D} ||
-		       A <- lists:seq(0, N), A =< N,
-		       B <- lists:seq(0, N - A), A + 2 * B =< N,
-		       C <- lists:seq(0, N - A - 2 * B), A + 2 * B + 3 * C =< N,
+		       A <- lists:seq(0, N),
+		       B <- lists:seq(0, (N - A) div 2),
+		       C <- lists:seq(0, (N - A - 2 * B) div 3),
 		       D <- lists:seq(0, N - A - 2 * B - 3 * C), (A + 2 * B + 3 * C + D) =:= N],
-		   [node()])).
+		   [])).
 
 pmap(Fun, List, Nodes) ->
     SpawnFun =
@@ -65,3 +57,7 @@ pmap(Fun, List, Nodes) ->
     Parent = self(),
     Pids = [SpawnFun(fun() -> Parent ! {self(), (catch Fun(Elem))} end) || Elem <- List],
     [receive {Pid, Val} -> Val end || Pid <- Pids].
+
+benchmark() ->
+    {Micro, Result} = timer:tc(counting, count_fast, [500]),
+    io:format("~ps~n", [Micro div 1000000]).
