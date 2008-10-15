@@ -58,6 +58,21 @@ pmap(Fun, List, Nodes) ->
     Pids = [SpawnFun(fun() -> Parent ! {self(), (catch Fun(Elem))} end) || Elem <- List],
     [receive {Pid, Val} -> Val end || Pid <- Pids].
 
+dp(N) ->
+    dp(N, 1, []).
+dp(N, I, [CN|_]) when N + 1 =:= I ->
+    CN;
+dp(N, 1, A) ->
+    dp(N, 2, [2|A]);
+dp(N, 2, A) ->
+    dp(N, 3, [5|A]);
+dp(N, 3, A) ->
+    dp(N, 4, [13|A]);
+dp(N, I, [C_1,C_2,C_3|_]=A) ->
+    C = C_1 * 2 + C_2 + C_3,
+    dp(N, I + 1, [C|A]).
+
 benchmark() ->
-    {Micro, Result} = timer:tc(counting, count_fast, [500]),
-    io:format("~ps~n", [Micro div 1000000]).
+    {Micro, Result} = timer:tc(counting, dp, [100000]),
+    io:format("~p, ~ps~n", [Result, Micro div 1000000]).
+
