@@ -12,4 +12,7 @@
       (and (prime? i) (zero? (mod x i))) (recur (/ x i) i (cons i acc))
       :else (recur x (inc i) acc))) n 2 '()))
 
-(println (apply max (prime-factors 600851475143)))
+(defn max-prime-factor [n]
+  (apply max (prime-factors n)))
+
+(println (max-prime-factor 600851475143))
