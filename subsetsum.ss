@@ -17,7 +17,7 @@
 (define (subset-sum k xs subset)
   (if (empty? xs)
       (and (not (empty? subset)) (= k (sum subset)))
-      (if (> (sum subset) k)
+      (if (or (> (sum subset) k) (< (+ (sum subset) (sum xs)) k))
           false
           (or (subset-sum k (cdr xs) subset)
               (subset-sum k (cdr xs) (cons (car xs) subset))))))
@@ -31,4 +31,5 @@
 (check-equal? (subset-sum?bf 0 '(1 2)) false)
 (check-equal? (subset-sum? 0 '(-7 -3 -2 5 8)) true)
 (check-equal? (subset-sum? 0 '(1 2)) false)
-(check-equal? (subset-sum? 0 '(8 5 -2 -3 -7 -3)) false)
+(check-equal? (subset-sum? 0 '(8 5 -2 -3 -7)) false)
+(check-equal? (subset-sum? 0 (sort '(8 5 -2 -3 -7) <)) true)
