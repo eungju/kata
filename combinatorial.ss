@@ -1,17 +1,18 @@
 #lang scheme
 
 (define (combination xs)
-  (if (empty? xs) '(())
-      (let ((x (car xs))
-            (subs (combination (cdr xs))))
-        (append subs (map (lambda (sub) (cons x sub)) subs)))))
-
+  (if (empty? xs)
+      '(())
+      (let ((x (car xs)) (ys (combination (cdr xs))))
+        (append ys (map (lambda (sub) (cons x sub)) ys)))))
 
 (define (permutation xs)
   (if (empty? xs)
       '(())
-      (append-map (lambda (x) (map (lambda (sub) (cons x sub)) (permutation (remove x xs)))) xs)))
-
+      (append-map (lambda (x)
+                    (map (lambda (ys) (cons x ys)) (permutation (remove x xs))))
+                  xs)))
+  
 (require rackunit)
 (check-equal? (combination '(1)) '(() (1)))
 (check-equal? (combination '(1 2)) '(() (2) (1) (1 2)))
