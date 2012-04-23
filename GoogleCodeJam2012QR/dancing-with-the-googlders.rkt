@@ -3,7 +3,7 @@
 
 (define (guess-best-result t s)
   (if s
-      (if (zero? (quotient t 3)) (remainder t 3) (quotient (+ t 4) 3))
+      (if (zero? t) 0 (quotient (+ t 4) 3))
       (quotient (+ t 2) 3)))
 
 (define (solve s p ts)
