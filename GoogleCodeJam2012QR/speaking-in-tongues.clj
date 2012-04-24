@@ -2,7 +2,7 @@
 
 (use '[clojure.set])
 
-(def alphabet (set (map char (range 97 (+ 97 26)))))
+(def alphabet (set (map char (range (int \a) (inc (int \z))))))
 
 (defn train [knowledge example]
   (merge knowledge (zipmap (first example) (second example))))
