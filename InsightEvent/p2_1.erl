@@ -142,3 +142,27 @@ optimized_more_test_() ->
 
 % 팩토리얼을 구하지 않으므로 입력이 1000000일 때도 바로 결과가 나온다.
 
+simplification_by_factorization(1, X, Acc, 0, Zeros) ->
+    {Zeros, Acc * X};
+simplification_by_factorization(1, X, Acc, Twos, Zeros) ->
+    simplification_by_factorization(1, X, Acc * 2, Twos - 1, Zeros);
+simplification_by_factorization(N, X, Acc, Twos, Zeros) when X rem 2 =:= 0 ->
+    simplification_by_factorization(N, X div 2, Acc, Twos + 1, Zeros);
+simplification_by_factorization(N, X, Acc, Twos, Zeros) when X rem 5 =:= 0, Twos > 0 ->
+    simplification_by_factorization(N, X div 5, Acc, Twos - 1, Zeros + 1);
+simplification_by_factorization(N, X, Acc, Twos, Zeros) ->
+    simplification_by_factorization(N - 1, N - 1, Acc * X, Twos, Zeros).
+simplification_by_factorization(N) ->
+    simplification_by_factorization(N, N, 1, 0, 0).
+
+simplification_by_factorization_test_() ->
+    [?_assertMatch({0, 1}, simplification_by_factorization(1)),
+     ?_assertMatch({3, 8}, simplification_by_factorization(15))
+     % ?_assertMatch({4, 4}, simplification_by_factorization(20)),
+     % ?_assertMatch({7, 8}, simplification_by_factorization(30)),
+     % ?_assertMatch({9, 2}, simplification_by_factorization(40)),
+     % ?_assertMatch({12, 2}, simplification_by_factorization(50)),
+     % ?_assertMatch({24, 4}, simplification_by_factorization(100)),
+     % ?_assertMatch({501, 8}, simplification_by_factorization(2012)),
+     % ?_assertMatch({2499, 8}, simplification_by_factorization(10000))
+    ].

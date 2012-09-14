@@ -20,9 +20,17 @@
 (define (terrible-deals ps)
   (filter (lambda (c) (not (any (lambda (d) (better-than? c d)) ps))) ps))
 
-(define (solve n p1 w1 m k a b c d)
+(define (solve-bf n p1 w1 m k a b c d)
   (let ((ps (products n p1 w1 m k a b c d)))
     (map length (list (terrible-deals ps) (bargains ps)))))
+
+(define (solve n p1 w1 m k a b c d)
+  (let* ((period (lcm m k))
+         (ps (products period p1 w1 m k a b c d))
+         (q (quotient n period))
+         (r (remainder n period)))
+    (list '1 (+ (* (length (bargains ps)) q) (length (bargains (take ps r)))))
+    ))
 
 (require rackunit)
 (check equal? (solve 5 1 4 5 7 1 0 1 2) '(3 3))

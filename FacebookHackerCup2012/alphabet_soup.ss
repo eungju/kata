@@ -17,8 +17,6 @@
 (check equal? (solve "MOVE FAST BE BOLD") 0)
 (check equal? (solve "HACK THE HACKERCUP") 1)
 
-(require srfi/13)
-
 (define (main)
   (let loop ((i 1) (t (string->number (read-line))))
     (when (<= i t)
