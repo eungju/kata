@@ -1,3 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+</head>
+<body>
 <h1 id="livepreview-watchr-chrome-livepage-extension">LivePreview: watchr + Chrome LivePage Extension</h1>
 <p>마크업 언어로 문서를 작성할 때 HTML로 변환한 결과를 바로 확인하고 싶을 때가 많다. Mou, Marked 등 이런 문제를 해결해주는 도구가 있지만 대부분 맥에서만 쓸 수 있고, 문서 처리 과정을 완전히 통제하지 못하는 등 다른 제약들도 있다. watchr과 크롬 LivePage를 이용하면 이 문제를 간편하게 해결할 수 있어서 소개한다.</p>
 <h2 id="watchr">watchr</h2>
@@ -5,11 +33,15 @@
 <pre><code>$ gem install watchr</code></pre>
 <p>확장자가 md인 마크다운 문서가 변경되면 pandoc을 이용해서 HTML로 변환하는 watchr 스크립트를 다음과 같이 작성한다. 마크다운 처리기마다 문법이 조금씩 다른데 원하는 처리기가 실행되도록 알맞게 고친다.</p>
 <pre class="sourceCode ruby"><code class="sourceCode ruby">watch(<span class="st">&#39;(.*)\.md&#39;</span>) <span class="kw">do</span> |m|
-  spawn(<span class="st">&quot;pandoc -f markdown -t html5 -o </span><span class="ot">#{</span>m[<span class="dv">1</span>]<span class="ot">}</span><span class="st">.html </span><span class="ot">#{</span>m[<span class="dv">0</span>]<span class="ot">}</span><span class="st">&quot;</span>)
+  spawn(<span class="st">&quot;pandoc -s -f markdown -t html5 -o </span><span class="ot">#{</span>m[<span class="dv">1</span>]<span class="ot">}</span><span class="st">.html </span><span class="ot">#{</span>m[<span class="dv">0</span>]<span class="ot">}</span><span class="st">&quot;</span>)
 <span class="kw">end</span></code></pre>
 <p>그리고 다음과 같이 위의 스크립트를 watchr로 실행하면 마크다운 문서를 수정하면 pandoc이 HTML 문서로 변환한다.</p>
 <pre><code>$ watchr livepreview.rb</code></pre>
 <p>브라우저에서 HTML 문서를 열어서 변환 결과를 확인할 수 있다. 하지만 매번 새로 고침(refresh)을 해야하기 때문에 불편하다. 이 때 크롬의 LivePage 확장으로 이 문제를 해결할 수 있다.</p>
-<h2 id="livepage-extension">LivePage Extension</h2>
+<h2 id="chrome-livepage-extension">Chrome LivePage Extension</h2>
 <p>크롬의 <a href="https://chrome.google.com/webstore/detail/livepage/pilnojpmdoofaelbinaeodfpjheijkbh">LivePage Extension</a> 확장은 웹 리소스가 변경되면 감지해서 바로 반영해준다. 로컬 HTML도 변경되면 바로 반영해주기 때문에 새로 고침을 하지 않아도 변경된 결과를 즉시 볼 수 있다. 크롬에서 LivePage 확장을 설치하고 <chrome://chrome/extensions/> 에서 LivePage의 &quot;Allow access to file URLs&quot;를 체크하여 로컬 파일에도 접근할 수 있게 해준다.</p>
 <p>HTML 파일을 크롬에서 열고 LivePage 버튼을 눌러서 &quot;LivePage&quot;를 활성화한다. 이제 마크다운 문서를 변경하고 저장하면 watchr이 이를 감지해서 HTML로 변환하고 HTML의 변경을 LivePage가 감지해서 크롬에서 보여준다. 즉 편집기에서 저장하면 결과를 바로 브라우저에서 확인할 수 있다.</p>
+<h2 id="firefox-auto-reload-extension">Firefox Auto Reload Extension</h2>
+<p>파이어폭스에서는 LiveView와 비슷한 역할을 하는 <a href="https://addons.mozilla.org/en-US/firefox/addon/auto-reload/?src=api">Auto Reload</a> 확장을 사용할 수 있다.</p>
+</body>
+</html>
