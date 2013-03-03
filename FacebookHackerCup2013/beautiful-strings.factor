@@ -1,20 +1,20 @@
-USING: arrays assocs formatting io kernel math math.order math.parser sequences sorting
-unicode.case ;
+USING: arrays assocs formatting io kernel math math.order math.parser sequences
+sorting tools.test unicode.case ;
 
 IN: beautiful-strings
 
-: normalize ( s -- s )
+: normalize ( str -- str )
   >lower [ CHAR: a CHAR: z between? ] filter ;
 
 "ABbCcc" normalize "abbccc" assert=
 "Good luck in the Facebook Hacker Cup this year!" normalize "goodluckinthefacebookhackercupthisyear" assert=
 
-: count-by ( seq -- hash )
+: count-by ( seq -- assoc )
   H{ } clone swap [ over inc-at ] each ;
 
 "abbccc" count-by H{ { CHAR: a 1 } { CHAR: b 2 } { CHAR: c 3 } } assert=
 
-: make-best-index ( str -- table )
+: make-best-index ( str -- assoc )
   count-by >alist [ [ second ] bi@ >=< ] sort keys [ 26 swap - 2array ] map-index ;
 
 "abbccc" make-best-index { { CHAR: c 26 } { CHAR: b 25 } { CHAR: a 24 } } assert=
