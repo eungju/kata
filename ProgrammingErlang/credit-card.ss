@@ -5,14 +5,16 @@
   (- (char->integer c) (char->integer #\0)))
 
 (define (luhn-checksum ccn)
-    (apply + (map (lambda (d i)
-                    (let ((p (* (digit->integer d) (+ 1 (remainder i 2)))))
-                      (+ (quotient p 10) (remainder p 10))))
-                  (reverse (string->list ccn))
-                  (iota (string-length ccn)))))
+  (remainder
+   (apply + (map (lambda (d i)
+                   (let ((p (* (digit->integer d) (+ 1 (remainder i 2)))))
+                     (+ (quotient p 10) (remainder p 10))))
+                 (reverse (string->list ccn))
+                 (iota (string-length ccn))))
+   10))
 
 (define (luhn? ccn)
-  (eq? 0 (remainder (luhn-checksum ccn) 10)))
+  (eq? 0 (luhn-checksum ccn)))
   
 (require rackunit)
 (check-eq? (luhn-checksum "1") 1)
