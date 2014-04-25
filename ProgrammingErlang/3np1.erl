@@ -10,6 +10,7 @@ cycle(N) ->
 			
 cycle(1, Acc) ->
     Acc + 1;
+
 cycle(N, Acc) when N rem 2 =:= 0 ->
     cycle(N div 2, Acc + 1);
 cycle(N, Acc) ->

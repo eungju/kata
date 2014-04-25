@@ -1,18 +1,12 @@
-import Char
+import Data.Char
 import Test.HUnit
 
 type Digit = Char
 
-oneTwos :: [Int]
-oneTwos = oneTwos 1
-    where
-      oneTwos 1 = 1:oneTwos 2
-      oneTwos 2 = 2:oneTwos 1
-
 luhnChecksum :: [Digit] -> Int
 luhnChecksum digits = sum (map weight pairs)
     where
-      pairs = zip (reverse (map digitToInt digits)) oneTwos
+      pairs = zip (reverse (map ord digits)) (cycle [1, 2])
       weight (x, y) = if x * y > 9 then x * y - 9 else x * y
 
 luhn :: [Digit] -> Bool
@@ -51,9 +45,6 @@ guessType digits = [name | (name, discriminant) <- types, discriminant digits]
                ("Visa", satisfyAll [beginWith "4", lengthIsOneOf [13,16]])]
 
 tests = test [
-         "1" ~: take 1 oneTwos ~?= [1],
-         "12" ~: take 2 oneTwos ~?= [1,2],
-         "121" ~: take 3 oneTwos ~?= [1,2,1],
          "Luhn checksum" ~: luhnChecksum "1" ~?= 1,
          "Luhn checksum" ~: luhnChecksum "12" ~?= 4,
          "Luhn checksum" ~: luhnChecksum "80" ~?= 7,

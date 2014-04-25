@@ -183,8 +183,11 @@ words_to_graph_test_() ->
 path_longest_graph(_Src, _Dest, _Graph, [], Longest) ->
     lists:reverse(Longest);
 path_longest_graph(Src, Dest, Graph, [[Dest|_]=Path|Remaining], Longest) ->
+    io:format("~p~n", [length(Longest)]),
     path_longest_graph(Src, Dest, Graph, Remaining,
-		      if length(Path) > length(Longest) -> Path ; true -> Longest end);
+		      if length(Path) > length(Longest) -> Path ;
+			 true -> Longest
+		      end);
 path_longest_graph(Src, Dest, Graph, [Path|Remaining], Longest) ->
     [H|L] = Path,
     States = case lists:member(H, L) of
