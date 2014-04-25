@@ -1,0 +1,13 @@
+#!/usr/bin/env escript -name s2
+
+main([]) ->
+	ccs_jam:seed(),
+	receive
+	after infinity -> true
+	end;
+main([Node|_]) ->
+	ccs_jam:join(list_to_atom(Node)),
+	receive
+	after infinity -> true
+	end.
+
