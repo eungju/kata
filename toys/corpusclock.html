@@ -1,0 +1,71 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>The Corpus Clock</title>
+</head>
+<body>
+<h1>The Corpus Clock</h1>
+
+<canvas id="canvas" width="600" height="600"></canvas>
+
+<script type="text/javascript">
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+var center = {x: canvas.width / 2, y: canvas.height / 2};
+var radius = canvas.width / 2;
+var gap = radius / 10;
+var TWO_PI = Math.PI * 2;
+var HALF_PI = Math.PI / 2;
+
+function drawBackground() {
+  ctx.fillStyle = "#000000";
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, radius, 0, TWO_PI, false);
+  ctx.closePath();
+  ctx.fill();
+  for (var i = 0; i < 4; i++) {
+    drawHand(TWO_PI / 4 * i, radius, 2);
+  }
+}
+
+function scale(value, a, b) {
+  return (value / a) * b;
+}
+
+function drawHands() {
+  var now = new Date();
+  var millis = now.getTime() % 1000;
+  var s = scale(now.getSeconds(), 60, TWO_PI);
+  var m = scale(now.getMinutes(), 60, TWO_PI) + (s / 60);
+  var h = scale(now.getHours() % 12, 12, TWO_PI) + (m / 12);
+
+  drawHand(h - HALF_PI, radius - gap * 5, gap * 0.5);
+  drawHand(m - HALF_PI, radius - gap * 3, gap * 0.5);
+  if (millis < 800) {
+    var ms = scale(millis % 800, 800, TWO_PI) + s;
+    drawHand(ms - HALF_PI, radius - gap, gap * 0.05);
+  } else {
+    drawHand(s - HALF_PI, radius - gap, gap * 0.5);
+  }
+}
+
+function drawHand(rad, pos, width) {
+  ctx.strokeStyle = "#00FF00";
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(center.x + Math.cos(rad) * (pos - gap), center.y + Math.sin(rad) * (pos - gap));
+  ctx.lineTo(center.x + Math.cos(rad) * pos, center.y + Math.sin(rad) * pos);
+  ctx.stroke();
+}
+
+function loop() {
+  drawBackground();
+  drawHands();
+}
+
+setInterval(loop, 10);
+</script>
+
+</body>
+</html>
