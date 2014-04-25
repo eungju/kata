@@ -1,0 +1,65 @@
+<p>~~~ -module(p2<em>2). -compile(export</em>all). -include_lib(&quot;eunit/include/eunit.hrl&quot;). ~~~</p>
+
+<p><img src="http://www.insightbook.co.kr/wp-content/uploads/2012/08/%EC%BD%94%EB%94%A9%EC%9D%B8%ED%84%B0%EB%B7%B0-%ED%91%9C%EC%A7%801.jpg" alt="코딩 인터뷰 완전 분석" /></p>
+
+<p>두 단어가 주어지면 첫 단어를 한 번에 한 문자씩만 다른 단어로 바꾸는 것을 반복하여 두 번째 단어를 만드는 과정을 출력하는 문제이다. 입력으로는 사전 파일과 단어 두 개가 주어진다.</p>
+
+<p>우선 사전 파일에서 단어를 읽는다.</p>
+
+<p>~~~ read<em>words(FileName) -&gt; {ok, Device} = file:open(FileName, [read]), get</em>all<em>lines</em>as_word(Device, []).</p>
+
+<p>get<em>all</em>lines<em>as</em>word(Device, Words) -&gt; case io:get<em>line(Device, &quot;&quot;) of eof -&gt; file:close(Device), lists:reverse(Words); Line -&gt; Word = string:strip(string:strip(Line, right, $\r), right, $\n), get</em>all<em>lines</em>as_word(Device, [Word|Words]) end. ~~~</p>
+
+<p>어떤 단어가 주어졌을 때 한 글자만 바꾸어서 만들 수 있는 단어를 알아야 한다. 두 단어가 주어졌을 때 두 단어가 몇 글자 다른지 알아낸다. 이를 이용해 전체 단어 중에서 한 글자만 다른 이웃 단어들을 구한다.</p>
+
+<p>~~~ word_distance(W1, W2) -&gt; lists:sum(lists:map(fun({C1, C2}) -&gt; if C1 =:= C2 -&gt; 0 ; true -&gt; 1 end end, lists:zip(W1, W2))).</p>
+
+<p>word<em>distance</em>test_() -&gt; [?<em>assertMatch(0, word</em>distance(&quot;aaa&quot;, &quot;aaa&quot;)), ?<em>assertMatch(1, word</em>distance(&quot;aaa&quot;, &quot;aab&quot;)), ?<em>assertMatch(2, word</em>distance(&quot;aaa&quot;, &quot;abc&quot;)) ].</p>
+
+<p>neighbor<em>words(Word, Words) -&gt; lists:filter(fun(X) -&gt; word</em>distance(Word, X) =:= 1 end, Words).</p>
+
+<p>neighbor<em>words</em>test_() -&gt; [?<em>assertMatch([], neighbor</em>words(&quot;aaa&quot;, [])), ?<em>assertMatch([&quot;aab&quot;, &quot;baa&quot;], neighbor</em>words(&quot;aaa&quot;, [&quot;aaa&quot;, &quot;aab&quot;, &quot;baa&quot;])) ]. ~~~</p>
+
+<p>단어 두 개가 주어졌을 때 첫 단어를 시작점으로 하고, 한 글자씩 바꾸어서 두 번째 단어와 일치할 때까지 탐색하여 그 때까지의 경로를 구하면 된다. 간단한 깊이 우선 탐색으로 경로를 구한다.</p>
+
+<p>~~~ path<em>dfs(</em>Src, Dest, <em>Words, [[Dest|_]=Path|_]) -&gt; lists:reverse(Path); path</em>dfs(<em>Src, <em>Dest, <em>Words, []) -&gt; []; path</em>dfs(Src, Dest, Words, [Path|Remaining]) -&gt; [H|L] = Path, States = case lists:member(H, L) of true -&gt; Remaining; _ -&gt; lists:map(fun(N) -&gt; [N|Path] end, neighbor</em>words(H, Words)) ++ Remaining end, path</em>dfs(Src, Dest, Words, States). path<em>dfs(Src, Dest, Words) -&gt; path</em>dfs(Src, Dest, Words, [[Src]]).</p>
+
+<p>path<em>dfs</em>test_() -&gt; [?<em>assertMatch([&quot;aaa&quot;], path</em>dfs(&quot;aaa&quot;, &quot;aaa&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([&quot;aaa&quot;, &quot;aab&quot;], path</em>dfs(&quot;aaa&quot;, &quot;aab&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([], path</em>dfs(&quot;aaa&quot;, &quot;aac&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([&quot;aaa&quot;, &quot;aba&quot;, &quot;abc&quot;], path</em>dfs(&quot;aaa&quot;, &quot;abc&quot;, [&quot;aaa&quot;, &quot;aba&quot;, &quot;abc&quot;])) ].</p>
+
+<p>path<em>dfs</em>example<em>test</em>() -&gt; [?<em>assertMatch([&quot;aa&quot;, &quot;ab&quot;, &quot;ac&quot;, &quot;cc&quot;], path</em>dfs(&quot;aa&quot;, &quot;cc&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;ac&quot;, &quot;cc&quot;])), ?<em>assertMatch([], path</em>dfs(&quot;aa&quot;, &quot;ac&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;bc&quot;, &quot;cc&quot;])), ?<em>assertMatch([&quot;aa&quot;, &quot;ab&quot;, &quot;bb&quot;, &quot;bc&quot;, &quot;cc&quot;], path</em>dfs(&quot;aa&quot;, &quot;cc&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;bb&quot;, &quot;bc&quot;, &quot;cc&quot;, &quot;dd&quot;])) ]. ~~~</p>
+
+<p>위와 같이 깊이 우선 탐색으로 예로 주어진 &quot;damp&quot;에서 &quot;like&quot;까지 경로를 구하면 길이가 1581인 경로가 나온다.</p>
+
+<p>심화문제 1. 가장 짧은 경로를 찾으려면 가까운 후보들부터 탐색하는 너비 우선 탐색을 해야 한다.</p>
+
+<p>~~~ path<em>bfs(</em>Src, Dest, <em>Words, [[Dest|_]=Path|_]) -&gt; lists:reverse(Path); path</em>bfs(<em>Src, <em>Dest, <em>Words, []) -&gt; []; path</em>bfs(Src, Dest, Words, [Path|Remaining]) -&gt; [H|L] = Path, States = case lists:member(H, L) of true -&gt; Remaining; _ -&gt; Remaining ++ lists:map(fun(N) -&gt; [N|Path] end, neighbor</em>words(H, Words)) end, path</em>bfs(Src, Dest, Words, States). path<em>bfs(Src, Dest, Words) -&gt; path</em>bfs(Src, Dest, Words, [[Src]]).</p>
+
+<p>path<em>bfs</em>test_() -&gt; [?<em>assertMatch([&quot;aaa&quot;], path</em>bfs(&quot;aaa&quot;, &quot;aaa&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([&quot;aaa&quot;, &quot;aab&quot;], path</em>bfs(&quot;aaa&quot;, &quot;aab&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([], path</em>bfs(&quot;aaa&quot;, &quot;aac&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([&quot;aaa&quot;, &quot;aba&quot;, &quot;abc&quot;], path</em>bfs(&quot;aaa&quot;, &quot;abc&quot;, [&quot;aaa&quot;, &quot;aba&quot;, &quot;abc&quot;])) ].</p>
+
+<p>path<em>bfs</em>example<em>test</em>() -&gt; [?<em>assertMatch([&quot;aa&quot;, &quot;ac&quot;, &quot;cc&quot;], path</em>bfs(&quot;aa&quot;, &quot;cc&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;ac&quot;, &quot;cc&quot;])), ?<em>assertMatch([], path</em>bfs(&quot;aa&quot;, &quot;ac&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;bc&quot;, &quot;cc&quot;])), ?<em>assertMatch([&quot;aa&quot;, &quot;ab&quot;, &quot;bb&quot;, &quot;bc&quot;, &quot;cc&quot;], path</em>bfs(&quot;aa&quot;, &quot;cc&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;bb&quot;, &quot;bc&quot;, &quot;cc&quot;, &quot;dd&quot;])) ]. ~~~</p>
+
+<p>&quot;damp&quot;에서 &quot;like&quot;까지의 가장 짧은 경로는 &quot;damp&quot;,&quot;dame&quot;,&quot;dime&quot;,&quot;dike&quot;,&quot;like&quot;로 길이는 4이다. 그런데 깊이 우선 탐색보다 실행 속도가 더 느리다. 이웃 단어들의 수가 많아서 그런 것 같다. 속도를 빠르게 하려면 가능성 없는 후보들은 방문하지 않도록 가지를 쳐야 한다. 처음 단어에서 멀리 떨어진 단어가 더 가까운 단어로 연결되어 있을 수도 있는데 이 경로를 택하면 최단 경로보다 무조건 길어지므로 더 이상 다음 단계들을 방문할 필요가 없다.</p>
+
+<p>~~~ path<em>bfs</em>prune(<em>Src, Dest, <em>Words, [[Dest|_]=Path|_], <em>Breadcrumb) -&gt; lists:reverse(Path); path</em>bfs</em>prune(</em>Src, <em>Dest, <em>Words, [], <em>Breadcrumb) -&gt; []; path</em>bfs</em>prune(Src, Dest, Words, [Path|Remaining], Breadcrumb) -&gt; [H|L] = Path, States = case lists:member(H, L) or lists:member(H, Breadcrumb) of true -&gt; Remaining; _ -&gt; Remaining ++ lists:map(fun(N) -&gt; [N|Path] end, neighbor</em>words(H, Words)) end, path<em>bfs</em>prune(Src, Dest, Words, States, [H|Breadcrumb]). path<em>bfs</em>prune(Src, Dest, Words) -&gt; path<em>bfs</em>prune(Src, Dest, Words, [[Src]], []).</p>
+
+<p>path<em>bfs</em>prune<em>test</em>() -&gt; [?<em>assertMatch([&quot;aaa&quot;], path</em>bfs<em>prune(&quot;aaa&quot;, &quot;aaa&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?</em>assertMatch([&quot;aaa&quot;, &quot;aab&quot;], path<em>bfs</em>prune(&quot;aaa&quot;, &quot;aab&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([], path</em>bfs<em>prune(&quot;aaa&quot;, &quot;aac&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?</em>assertMatch([&quot;aaa&quot;, &quot;aba&quot;, &quot;abc&quot;], path<em>bfs</em>prune(&quot;aaa&quot;, &quot;abc&quot;, [&quot;aaa&quot;, &quot;aba&quot;, &quot;abc&quot;])), ?<em>assertMatch([&quot;damp&quot;,&quot;dame&quot;,&quot;dime&quot;,&quot;dike&quot;,&quot;like&quot;], path</em>bfs<em>prune(&quot;damp&quot;, &quot;like&quot;, read</em>words(&quot;word4.txt&quot;))) ].</p>
+
+<p>path<em>bfs</em>prune<em>example</em>test_() -&gt; [?<em>assertMatch([&quot;aa&quot;, &quot;ac&quot;, &quot;cc&quot;], path</em>bfs<em>prune(&quot;aa&quot;, &quot;cc&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;ac&quot;, &quot;cc&quot;])), ?</em>assertMatch([], path<em>bfs</em>prune(&quot;aa&quot;, &quot;ac&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;bc&quot;, &quot;cc&quot;])), ?<em>assertMatch([&quot;aa&quot;, &quot;ab&quot;, &quot;bb&quot;, &quot;bc&quot;, &quot;cc&quot;], path</em>bfs_prune(&quot;aa&quot;, &quot;cc&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;bb&quot;, &quot;bc&quot;, &quot;cc&quot;, &quot;dd&quot;])) ]. ~~~</p>
+
+<p>가지치기를 하지 않으면 30초 쯤 걸렸는데 가지치기를 하면 2초 정도면 최단 경로를 구할 수 있다.</p>
+
+<p>심화문제 2. 가장 긴 경로를 찾으려면 모든 경로를 다 조사해서 가장 긴 경로를 찾아야 한다.</p>
+
+<p>~~~ path<em>longest(</em>Src, <em>Dest, <em>Words, [], Longest) -&gt; lists:reverse(Longest); path</em>longest(Src, Dest, Words, [[Dest|_]=Path|Remaining], Longest) -&gt; path</em>longest(Src, Dest, Words, Remaining, case length(Path) &gt; length(Longest) of true -&gt; Path; _ -&gt; Longest end); path<em>longest(Src, Dest, Words, [Path|Remaining], Longest) -&gt; [H|L] = Path, States = case lists:member(H, L) of true -&gt; Remaining; _ -&gt; lists:map(fun(N) -&gt; [N|Path] end, neighbor</em>words(H, Words)) ++ Remaining end, path<em>longest(Src, Dest, Words, States, Longest). path</em>longest(Src, Dest, Words) -&gt; path_longest(Src, Dest, Words, [[Src]], []).</p>
+
+<p>path<em>longest</em>test_() -&gt; [?<em>assertMatch([&quot;aaa&quot;], path</em>longest(&quot;aaa&quot;, &quot;aaa&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([&quot;aaa&quot;, &quot;aab&quot;], path</em>longest(&quot;aaa&quot;, &quot;aab&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([], path</em>longest(&quot;aaa&quot;, &quot;aac&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([&quot;aaa&quot;, &quot;aba&quot;, &quot;abc&quot;], path</em>longest(&quot;aaa&quot;, &quot;abc&quot;, [&quot;aaa&quot;, &quot;aba&quot;, &quot;abc&quot;])), ?<em>assertMatch([&quot;aa&quot;, &quot;ab&quot;, &quot;ac&quot;, &quot;cc&quot;], path</em>longest(&quot;aa&quot;, &quot;cc&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;ac&quot;, &quot;cc&quot;])) ]. ~~~</p>
+
+<p>모든 경로를 다 조사하려면 엄청난 시간이 필요하다. 하지만 탐색 대상을 줄일 수 있는 방법이 딱히 생각나지 않는다. 이웃 단어들을 찾는 시간을 줄여서 속도를 개선해봤지만 큰 효과는 없었다.</p>
+
+<p>~~~ words<em>to</em>graph([], <em>, Graph) -&gt; Graph; words</em>to<em>graph([H|L], All, Graph) -&gt; Neighbors = neighbor</em>words(H, All), words<em>to</em>graph(L, All, gb<em>trees:enter(H, Neighbors, Graph)). words</em>to<em>graph(Words) -&gt; words</em>to<em>graph(Words, Words, gb</em>trees:empty()).</p>
+
+<p>words<em>to</em>graph<em>test</em>() -&gt; [?<em>assertMatch([{&quot;aaa&quot;,[&quot;aab&quot;]}, {&quot;aab&quot;,[&quot;aaa&quot;]}], gb</em>trees:to<em>list(words</em>to_graph([&quot;aaa&quot;, &quot;aab&quot;]))) ].</p>
+
+<p>path<em>longest</em>graph(<em>Src, <em>Dest, <em>Graph, [], Longest) -&gt; lists:reverse(Longest); path</em>longest</em>graph(Src, Dest, Graph, [[Dest|_]=Path|Remaining], Longest) -&gt; path</em>longest<em>graph(Src, Dest, Graph, Remaining, if length(Path) &gt; length(Longest) -&gt; Path ; true -&gt; Longest end); path</em>longest<em>graph(Src, Dest, Graph, [Path|Remaining], Longest) -&gt; [H|L] = Path, States = case lists:member(H, L) of true -&gt; Remaining; _ -&gt; lists:map(fun(N) -&gt; [N|Path] end, gb</em>trees:get(H, Graph)) ++ Remaining end, path<em>longest</em>graph(Src, Dest, Graph, States, Longest). path<em>longest</em>graph(Src, Dest, Words) -&gt; path<em>longest</em>graph(Src, Dest, words<em>to</em>graph(Words), [[Src]], []).</p>
+
+<p>path<em>longest</em>graph<em>test</em>() -&gt; [?<em>assertMatch([&quot;aaa&quot;], path</em>longest<em>graph(&quot;aaa&quot;, &quot;aaa&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?</em>assertMatch([&quot;aaa&quot;, &quot;aab&quot;], path<em>longest</em>graph(&quot;aaa&quot;, &quot;aab&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?<em>assertMatch([], path</em>longest<em>graph(&quot;aaa&quot;, &quot;aac&quot;, [&quot;aaa&quot;, &quot;aab&quot;])), ?</em>assertMatch([&quot;aaa&quot;, &quot;aba&quot;, &quot;abc&quot;], path<em>longest</em>graph(&quot;aaa&quot;, &quot;abc&quot;, [&quot;aaa&quot;, &quot;aba&quot;, &quot;abc&quot;])), ?<em>assertMatch([&quot;aa&quot;, &quot;ab&quot;, &quot;ac&quot;, &quot;cc&quot;], path</em>longest_graph(&quot;aa&quot;, &quot;cc&quot;, [&quot;aa&quot;, &quot;ab&quot;, &quot;ac&quot;, &quot;cc&quot;])) ]. ~~~</p>
