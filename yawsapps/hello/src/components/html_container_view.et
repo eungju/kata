@@ -1,0 +1,18 @@
+<%@ index(Data) %>
+<html>
+<head>
+<title>hello</title>
+<link rel="stylesheet" href="/style.css" type="text/css">
+</style>
+</head>
+<body>
+<div id="content">
+<h1>hello app</h1>
+<% Data %>
+<br>
+<div width="80%" align="right">
+powered by <a href="http://erlyweb.org">ErlyWeb</a> / <a href="http://yaws.hyber.org">Yaws</a>
+</div>
+</div>
+</body>
+</html>
