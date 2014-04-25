@@ -1,0 +1,18 @@
+(define (make-accumulator acc)
+  (let ((acc acc))
+    (lambda (n)
+      (set! acc (+ acc n))
+      acc)))
+
+(define (make-account balance)
+  (let ((balance balance))
+    (define (withdraw amount)
+      (set! balance (- balance amount))
+      balance)
+    (define (deposit amount)
+      (set! balance (+ balance amount))
+      balance)
+    (lambda (action)
+      (cond
+        ((eq? action 'withdraw) withdraw)
+        ((eq? action 'deposit) deposit)))))
