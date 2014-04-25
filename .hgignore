@@ -19,3 +19,6 @@ a.out
 cabal.sandbox.config
 .cabal-sandbox
 dist
+
+syntax: regexp
+^GoogleCodeJam2012QR/.*\.out
