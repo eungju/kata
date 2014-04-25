@@ -13,3 +13,9 @@ erl_crash.dump
 a.out
 *.hi
 .idea
+*.dSYM
+
+#cabal
+cabal.sandbox.config
+.cabal-sandbox
+dist
