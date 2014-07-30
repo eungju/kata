@@ -2,6 +2,7 @@ import System.Random
 import Control.Applicative
 import System.Environment
 import Text.Printf
+import Data.Char
 
 data Decision = Stay | Leave
               deriving(Eq, Show)
@@ -17,4 +18,4 @@ main :: IO ()
 main = do
   factor <- ((read :: String -> Int) . head) <$> getArgs
   decision <- stayOrLeave factor
-  printf "Today's decision is %s.\n" (show decision)
+  printf "You should %s.\n" (map toLower $ show decision)
