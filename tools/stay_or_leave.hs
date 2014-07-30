@@ -1,16 +1,15 @@
 import System.Random
 import Control.Applicative
-import Control.Monad
 import System.Environment
 import Text.Printf
 
-data JobAction = Stay | Leave
-               deriving(Eq, Show)
+data Decision = Stay | Leave
+              deriving(Eq, Show)
 
-stayOrLeave :: Int -> IO JobAction
-stayOrLeave stayFactor = do
+stayOrLeave :: Int -> IO Decision
+stayOrLeave stayDays = do
   n <- randomIO :: IO Float
-  return (if n < (1 / fromIntegral stayFactor)
+  return (if n < (1 / fromIntegral stayDays)
           then Leave
           else Stay)
 
