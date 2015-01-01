@@ -6,75 +6,79 @@ case object Forth extends Book
 case object Fifth extends Book
 
 case class Bundle(books: Set[Book]) {
-  val UNIT_PRICE = 8
-  val DISCOUNT_RATES = Array(0, 0, 0.05, 0.1, 0.2, 0.25)
   def contains(book: Book): Boolean = books.contains(book)
   val size = books.size
   def add(book: Book): Bundle = Bundle(books + book)
-  val price: Double = books.size * UNIT_PRICE * (1 - DISCOUNT_RATES(books.size))
+  val discountRate = Array(0, 0, 0.05, 0.1, 0.2, 0.25)(books.size)
+  val price: Double = books.size * 8 * (1 - discountRate)
 }
 
-case class Order(bundles: List[Bundle]) {
+case object Bundle {
+  def apply(books: Book*): Bundle = Bundle(books.toSet)
+}
+
+case class Bundling(bundles: List[Bundle]) {
   val price: Double = bundles.foldLeft(0.0) { _ + _.price }
-  def pack(book: Book): Set[Order] = {
+  def pack(book: Book): Set[Bundling] = {
     bundles.toSet.filter(!_.contains(book)).map((bundle) => {
       val (left, right) = bundles.span(_ != bundle)
-      Order(left ++ right.drop(1) :+ bundle.add(book))
-    }) + Order(bundles :+ Bundle(Set(book)))
+      Bundling(left ++ right.drop(1) :+ bundle.add(book))
+    }) + Bundling(bundles :+ Bundle(Set(book)))
   }
-  def packAll(books: List[Book]): Set[Order] = {
+  def packAll(books: Book*): Set[Bundling] = {
     books.foldLeft(Set(this)) { (orders, book) =>
-      val ub = orders.map(_.price).min + Bundle(Set(book)).price
-      orders.flatMap(_.pack(book)).filter(ub >= _.price)
+      val ub = orders.map(_.price).min + Bundle(book).price
+      orders.flatMap(_.pack(book).filter(ub >= _.price))
     }
   }
 }
 
-case object Order {
-  def price(books: List[Book]): Double = Order(List()).packAll(books).map(_.price).min
+case object Bundling {
+  def apply(bundles: Bundle*): Bundling = Bundling(bundles.toList)
+  def price(books: Book*): Double = Bundling().packAll(books:_*).map(_.price).min
 }
 
 object HarryPotter {
   def main(args: Array[String]) = {
-    val bundle = Bundle(Set(First, Second))
-    val order = Order(List(Bundle(Set(First))))
+    val bundle = Bundle(First, Second)
+    val bundling = Bundling(Bundle(First))
 
-    assert(Bundle(Set(First)).contains(First))
-    assert(!Bundle(Set(First)).contains(Second))
+    assert(Bundle(First).contains(First))
+    assert(!Bundle(First).contains(Second))
 
-    assert(Bundle(Set(First)).price == 8)
-    assert(Bundle(Set(First, Second)).price == 8 * 2 * 0.95)
-    assert(Bundle(Set(First, Second, Third)).price == 8 * 3 * 0.90)
-    assert(Bundle(Set(First, Second, Third, Forth)).price == 8 * 4 * 0.80)
-    assert(Bundle(Set(First, Second, Third, Forth, Fifth)).price == 8 * 5 * 0.75)
+    assert(Bundle(First).price == 8)
+    assert(Bundle(First, Second).price == 8 * 2 * 0.95)
+    assert(Bundle(First, Second, Third).price == 8 * 3 * 0.90)
+    assert(Bundle(First, Second, Third, Forth).price == 8 * 4 * 0.80)
+    assert(Bundle(First, Second, Third, Forth, Fifth).price == 8 * 5 * 0.75)
 
-    assert(Order(List(Bundle(Set(First)), Bundle(Set(First)))).price == 8.0 * 2)
+    assert(Bundling(Bundle(First), Bundle(First)).price == 8.0 * 2)
 
-    assert(Order(List()).pack(First) == Set(Order(List(Bundle(Set(First))))))
-    assert(Order(List(Bundle(Set(First)))).pack(First) == Set(Order(List(Bundle(Set(First)), Bundle(Set(First))))))
-    assert(Order(List(Bundle(Set(First)))).pack(Second) == Set(Order(List(Bundle(Set(First, Second)))),
-                                                               Order(List(Bundle(Set(First)), Bundle(Set(Second))))))
-    assert(Order(List(Bundle(Set(First)), Bundle(Set(First)))).pack(Second) == Set(Order(List(Bundle(Set(First)), Bundle(Set(First, Second)))),
-                                                                                   Order(List(Bundle(Set(First)), Bundle(Set(First)), Bundle(Set(Second))))))
+    assert(Bundling().pack(First) == Set(Bundling(Bundle(First))))
+    assert(Bundling(Bundle(First)).pack(First) == Set(Bundling(Bundle(First), Bundle(First))))
+    assert(Bundling(Bundle(First)).pack(Second) == Set(Bundling(Bundle(First, Second)),
+                                                       Bundling(Bundle(First), Bundle(Second))))
+    assert(Bundling(Bundle(First), Bundle(First)).pack(Second) == Set(Bundling(Bundle(First), Bundle(First, Second)),
+                                                                      Bundling(Bundle(First), Bundle(First), Bundle(Second))))
 
-    assert(Order(List()).packAll(List(First, Second)) == Set(Order(List(Bundle(Set(First, Second)))),
-                                                             Order(List(Bundle(Set(First)), Bundle(Set(Second))))))
+    assert(Bundling().packAll(First, Second) == Set(Bundling(Bundle(First, Second)),
+                                                    Bundling(Bundle(First), Bundle(Second))))
 
     //example
-    assert(Order.price(List(First, First, Second, Second, Third, Third, Forth, Fifth)) == 51.20)
+    assert(Bundling.price(First, First, Second, Second, Third, Third, Forth, Fifth) == 51.20)
 
     //several discounts
-    assert(Order.price(List(First, First, Second)) == 8 + (8 * 2 * 0.95))
-    assert(Order.price(List(First, First, Second, Second)) == 2 * (8 * 2 * 0.95))
-    assert(Order.price(List(First, First, Second, Third, Third, Forth)) == (8 * 4 * 0.8) + (8 * 2 * 0.95))
-    assert(Order.price(List(First, Second, Second, Third, Forth, Fifth)) == 8 + (8 * 5 * 0.75))
+    assert(Bundling.price(First, First, Second) == 8 + (8 * 2 * 0.95))
+    assert(Bundling.price(First, First, Second, Second) == 2 * (8 * 2 * 0.95))
+    assert(Bundling.price(First, First, Second, Third, Third, Forth) == (8 * 4 * 0.8) + (8 * 2 * 0.95))
+    assert(Bundling.price(First, Second, Second, Third, Forth, Fifth) == 8 + (8 * 5 * 0.75))
 
     //edge cases
-    assert(Order.price(List(First, First, Second, Second, Third, Third, Forth, Fifth)) == 2 * (8 * 4 * 0.8))
-    assert(Order.price(List(First, First, First, First, First,
-                            Second, Second, Second, Second, Second,
-                            Third, Third, Third, Third,
-                            Forth, Forth, Forth, Forth, Forth,
-                            Fifth, Fifth, Fifth, Fifth)) == 3 * (8 * 5 * 0.75) + 2 * (8 * 4 * 0.8))
+    assert(Bundling.price(First, First, Second, Second, Third, Third, Forth, Fifth) == 2 * (8 * 4 * 0.8))
+    assert(Bundling.price(First, First, First, First, First,
+                          Second, Second, Second, Second, Second,
+                          Third, Third, Third, Third,
+                          Forth, Forth, Forth, Forth, Forth,
+                          Fifth, Fifth, Fifth, Fifth) == 3 * (8 * 5 * 0.75) + 2 * (8 * 4 * 0.8))
   }
 }
