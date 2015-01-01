@@ -17,19 +17,16 @@ case class Bundle(books: Set[Book]) {
 case class Order(bundles: List[Bundle]) {
   val price: Double = bundles.foldLeft(0.0) { _ + _.price }
   def pack(book: Book): Set[Order] = {
-    val offsprings = bundles.toSet.filter(!_.contains(book)).map((bundle) => {
+    bundles.toSet.filter(!_.contains(book)).map((bundle) => {
       val (left, right) = bundles.span(_ != bundle)
       Order(left ++ right.drop(1) :+ bundle.add(book))
-    })
-    val seed = Bundle(Set(book))
-    if (bundles.exists(bundle => bundle.size == 1 && bundle != seed)) {
-      offsprings
-    } else {
-      offsprings + Order(this.bundles :+ seed)
-    }
+    }) + Order(bundles :+ Bundle(Set(book)))
   }
   def packAll(books: List[Book]): Set[Order] = {
-    books.foldLeft(Set(this)) { (orders, book) => orders.flatMap { _.pack(book) } }
+    books.foldLeft(Set(this)) { (orders, book) =>
+      val ub = orders.map(_.price).min + Bundle(Set(book)).price
+      orders.flatMap(_.pack(book)).filter(ub >= _.price)
+    }
   }
 }
 
@@ -55,12 +52,13 @@ object HarryPotter {
 
     assert(Order(List()).pack(First) == Set(Order(List(Bundle(Set(First))))))
     assert(Order(List(Bundle(Set(First)))).pack(First) == Set(Order(List(Bundle(Set(First)), Bundle(Set(First))))))
-    assert(Order(List(Bundle(Set(First)))).pack(Second) == Set(Order(List(Bundle(Set(First, Second))))))
-    assert(Order(List(Bundle(Set(First)), Bundle(Set(First)))).pack(Second) == Set(Order(List(Bundle(Set(First)), Bundle(Set(First, Second))))))
+    assert(Order(List(Bundle(Set(First)))).pack(Second) == Set(Order(List(Bundle(Set(First, Second)))),
+                                                               Order(List(Bundle(Set(First)), Bundle(Set(Second))))))
+    assert(Order(List(Bundle(Set(First)), Bundle(Set(First)))).pack(Second) == Set(Order(List(Bundle(Set(First)), Bundle(Set(First, Second)))),
+                                                                                   Order(List(Bundle(Set(First)), Bundle(Set(First)), Bundle(Set(Second))))))
 
-    assert(Order(List()).packAll(List(First, Second)) == Set(Order(List(Bundle(Set(First, Second))))))
-    assert(Order(List()).packAll(List(First, Second, Third)) == Set(Order(List(Bundle(Set(First, Second, Third)))),
-                                                                    Order(List(Bundle(Set(First, Second)), Bundle(Set(Third))))))
+    assert(Order(List()).packAll(List(First, Second)) == Set(Order(List(Bundle(Set(First, Second)))),
+                                                             Order(List(Bundle(Set(First)), Bundle(Set(Second))))))
 
     //example
     assert(Order.price(List(First, First, Second, Second, Third, Third, Forth, Fifth)) == 51.20)
