@@ -87,3 +87,40 @@ object HarryPotter {
                  Fifth, Fifth, Fifth, Fifth).price == 3 * (8 * 5 * 0.75) + 2 * (8 * 4 * 0.8))
   }
 }
+
+import org.specs2.mutable._
+
+class HarryPotterSpec extends Specification {
+  "Bundle(First)" should {
+    val dut = Bundle(First)
+    "contain First" in {
+      dut.contains(First)
+    }
+    "not contain Second" in {
+      !dut.contains(Second)
+    }
+    "contain 1 book" in {
+      dut.size == 1
+    }
+    "add a book" in {
+      dut.add(Second) == Bundle(First, Second)
+    }
+  }
+  "The bundle discount" should {
+    "0% for one book" in {
+      Bundle(First).price == 8.0
+    }
+    "5% for two books" in {
+      Bundle(First, Second).price == 8.0 * 2 * 0.95
+    }
+    "10% for three books" in {
+      Bundle(First, Second, Third).price == 8.0 * 3 * 0.90
+    }
+    "20% for four books" in {
+      Bundle(First, Second, Third, Forth).price == 8.0 * 4 * 0.80
+    }
+    "25% for five books" in {
+      Bundle(First, Second, Third, Forth, Fifth).price == 8.0 * 5 * 0.75
+    }
+  }
+}
