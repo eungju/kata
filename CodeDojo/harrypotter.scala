@@ -8,11 +8,11 @@ case object Forth extends Book
 case object Fifth extends Book
 
 case class Bundle(books: Set[Book]) {
-  def contains(book: Book): Boolean = books.contains(book)
   val size = books.size
-  def add(book: Book): Bundle = Bundle(books + book)
   val discountRate = Array(0, 0, 0.05, 0.1, 0.2, 0.25)(books.size)
   val price: Double = books.size * 8 * (1 - discountRate)
+  def contains(book: Book): Boolean = books.contains(book)
+  def add(book: Book): Bundle = Bundle(books + book)
 }
 
 case object Bundle {
@@ -27,7 +27,7 @@ case class Bundling(bundles: List[Bundle]) {
       Bundling(left ++ right.drop(1) :+ bundle.add(book))
     }) + Bundling(bundles :+ Bundle(Set(book)))
   }
-  def packAll(books: Book*): Set[Bundling] = {
+  def packAll(books: List[Book]): Set[Bundling] = {
     books.foldLeft(Set(this)) { (orders, book) =>
       val ub = orders.map(_.price).min + Bundle(book).price
       orders.flatMap(_.pack(book).filter(ub >= _.price))
@@ -40,87 +40,81 @@ case object Bundling {
 }
 
 case class Order(books: Book*) {
-  def price(): Double = Bundling().packAll(books:_*).map(_.price).min
+  def price(): Double = Bundling().packAll(books.toList).map(_.price).min
 }
 
-object HarryPotter {
-  def main(args: Array[String]) = {
-    val bundle = Bundle(First, Second)
-    val bundling = Bundling(Bundle(First))
-
-    assert(Bundle(First).contains(First))
-    assert(!Bundle(First).contains(Second))
-
-    assert(Bundle(First).price == 8)
-    assert(Bundle(First, Second).price == 8 * 2 * 0.95)
-    assert(Bundle(First, Second, Third).price == 8 * 3 * 0.90)
-    assert(Bundle(First, Second, Third, Forth).price == 8 * 4 * 0.80)
-    assert(Bundle(First, Second, Third, Forth, Fifth).price == 8 * 5 * 0.75)
-
-    assert(Bundling(Bundle(First), Bundle(First)).price == 8.0 * 2)
-
-    assert(Bundling().pack(First) == Set(Bundling(Bundle(First))))
-    assert(Bundling(Bundle(First)).pack(First) == Set(Bundling(Bundle(First), Bundle(First))))
-    assert(Bundling(Bundle(First)).pack(Second) == Set(Bundling(Bundle(First, Second)),
-                                                       Bundling(Bundle(First), Bundle(Second))))
-    assert(Bundling(Bundle(First), Bundle(First)).pack(Second) == Set(Bundling(Bundle(First), Bundle(First, Second)),
-                                                                      Bundling(Bundle(First), Bundle(First), Bundle(Second))))
-
-    assert(Bundling().packAll(First, Second) == Set(Bundling(Bundle(First, Second)),
-                                                    Bundling(Bundle(First), Bundle(Second))))
-
-    //example
-    assert(Order(First, First, Second, Second, Third, Third, Forth, Fifth).price == 51.20)
-
-    //several discounts
-    assert(Order(First, First, Second).price == 8 + (8 * 2 * 0.95))
-    assert(Order(First, First, Second, Second).price == 2 * (8 * 2 * 0.95))
-    assert(Order(First, First, Second, Third, Third, Forth).price == (8 * 4 * 0.8) + (8 * 2 * 0.95))
-    assert(Order(First, Second, Second, Third, Forth, Fifth).price == 8 + (8 * 5 * 0.75))
-
-    //edge cases
-    assert(Order(First, First, Second, Second, Third, Third, Forth, Fifth).price == 2 * (8 * 4 * 0.8))
-    assert(Order(First, First, First, First, First,
-                 Second, Second, Second, Second, Second,
-                 Third, Third, Third, Third,
-                 Forth, Forth, Forth, Forth, Forth,
-                 Fifth, Fifth, Fifth, Fifth).price == 3 * (8 * 5 * 0.75) + 2 * (8 * 4 * 0.8))
-  }
-}
 
 import org.specs2.mutable._
 
 class HarryPotterSpec extends Specification {
-  "Bundle(First)" should {
+  "Bundle" should {
     val dut = Bundle(First)
-    "contain First" in {
-      dut.contains(First)
+    "know it's members" in {
+      dut.contains(First) && !dut.contains(Second)
     }
-    "not contain Second" in {
-      !dut.contains(Second)
+    "know the number of books" in {
+      dut.size must_== 1
     }
-    "contain 1 book" in {
-      dut.size == 1
-    }
-    "add a book" in {
-      dut.add(Second) == Bundle(First, Second)
+    "create another bundle with a new book" in {
+      dut.add(Second) must_== Bundle(First, Second)
     }
   }
-  "The bundle discount" should {
+
+  "Bundle discount" should {
     "0% for one book" in {
-      Bundle(First).price == 8.0
+      Bundle(First).price must_== 8.0
     }
     "5% for two books" in {
-      Bundle(First, Second).price == 8.0 * 2 * 0.95
+      Bundle(First, Second).price must_== 8.0 * 2 * 0.95
     }
     "10% for three books" in {
-      Bundle(First, Second, Third).price == 8.0 * 3 * 0.90
+      Bundle(First, Second, Third).price must_== 8.0 * 3 * 0.90
     }
     "20% for four books" in {
-      Bundle(First, Second, Third, Forth).price == 8.0 * 4 * 0.80
+      Bundle(First, Second, Third, Forth).price must_== 8.0 * 4 * 0.80
     }
     "25% for five books" in {
-      Bundle(First, Second, Third, Forth, Fifth).price == 8.0 * 5 * 0.75
+      Bundle(First, Second, Third, Forth, Fifth).price must_== 8.0 * 5 * 0.75
+    }
+  }
+
+  "Bundling" should {
+    "add new bundle if it has no bundle" in {
+      Bundling().pack(First) must_== Set(Bundling(Bundle(First)))
+    }
+    "add new bundle if existing bundles can't accept the book" in {
+      Bundling(Bundle(First)).pack(First) must_== Set(Bundling(Bundle(First), Bundle(First)))
+    }
+    "add the book into one of existing bundles or add new bundle if existing bundles can accept the book" in {
+      Bundling(Bundle(First)).pack(Second) must_== Set(Bundling(Bundle(First, Second)), Bundling(Bundle(First), Bundle(Second)))
+    }
+    "create all promising possibilities" in {
+      Bundling().packAll(List(First, Second)) must_== Set(Bundling(Bundle(First, Second)), Bundling(Bundle(First), Bundle(Second)))
+    }
+  }
+
+  "Order discount" should {
+    "be applied to 2-book bundle and 1-book bundle" in {
+      Order(First, First, Second).price must_== (8 * 2 * 0.95) + 8
+    }
+    "be applied to two 2-book bundles" in {
+      Order(First, First, Second, Second).price must_== 2 * (8 * 2 * 0.95)
+    }
+    "be applied to 4-book bundle and 2-book bundle. it's cheaper than two 3-book bundles" in {
+      Order(First, First, Second, Third, Third, Forth).price must_== (8 * 4 * 0.8) + (8 * 2 * 0.95)
+    }
+    "be applied to 5-book bundle and 1-book bundle. it's cheapter than 4-book bundle and 2-book bundle" in {
+      Order(First, Second, Second, Third, Forth, Fifth).price must_== (8 * 5 * 0.75) + 8
+    }
+    "be applied to two 4-book bundles. it's cheaper than 5-book bundle and 3-book bundle" in {
+      Order(First, First, Second, Second, Third, Third, Forth, Fifth).price must_== 2 * (4 * 8 * 0.80)
+    }
+    "be applied to three 5-book bundles and 2 4-book bundles" in {
+      Order(First, First, First, First, First,
+        Second, Second, Second, Second, Second,
+        Third, Third, Third, Third,
+        Forth, Forth, Forth, Forth, Forth,
+        Fifth, Fifth, Fifth, Fifth).price must_== 3 * (8 * 5 * 0.75) + 2 * (8 * 4 * 0.8)
     }
   }
 }
