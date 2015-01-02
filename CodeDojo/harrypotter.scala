@@ -1,3 +1,5 @@
+package harrypotter
+
 sealed trait Book
 case object First extends Book
 case object Second extends Book
@@ -35,7 +37,10 @@ case class Bundling(bundles: List[Bundle]) {
 
 case object Bundling {
   def apply(bundles: Bundle*): Bundling = Bundling(bundles.toList)
-  def price(books: Book*): Double = Bundling().packAll(books:_*).map(_.price).min
+}
+
+case class Order(books: Book*) {
+  def price(): Double = Bundling().packAll(books:_*).map(_.price).min
 }
 
 object HarryPotter {
@@ -65,20 +70,20 @@ object HarryPotter {
                                                     Bundling(Bundle(First), Bundle(Second))))
 
     //example
-    assert(Bundling.price(First, First, Second, Second, Third, Third, Forth, Fifth) == 51.20)
+    assert(Order(First, First, Second, Second, Third, Third, Forth, Fifth).price == 51.20)
 
     //several discounts
-    assert(Bundling.price(First, First, Second) == 8 + (8 * 2 * 0.95))
-    assert(Bundling.price(First, First, Second, Second) == 2 * (8 * 2 * 0.95))
-    assert(Bundling.price(First, First, Second, Third, Third, Forth) == (8 * 4 * 0.8) + (8 * 2 * 0.95))
-    assert(Bundling.price(First, Second, Second, Third, Forth, Fifth) == 8 + (8 * 5 * 0.75))
+    assert(Order(First, First, Second).price == 8 + (8 * 2 * 0.95))
+    assert(Order(First, First, Second, Second).price == 2 * (8 * 2 * 0.95))
+    assert(Order(First, First, Second, Third, Third, Forth).price == (8 * 4 * 0.8) + (8 * 2 * 0.95))
+    assert(Order(First, Second, Second, Third, Forth, Fifth).price == 8 + (8 * 5 * 0.75))
 
     //edge cases
-    assert(Bundling.price(First, First, Second, Second, Third, Third, Forth, Fifth) == 2 * (8 * 4 * 0.8))
-    assert(Bundling.price(First, First, First, First, First,
-                          Second, Second, Second, Second, Second,
-                          Third, Third, Third, Third,
-                          Forth, Forth, Forth, Forth, Forth,
-                          Fifth, Fifth, Fifth, Fifth) == 3 * (8 * 5 * 0.75) + 2 * (8 * 4 * 0.8))
+    assert(Order(First, First, Second, Second, Third, Third, Forth, Fifth).price == 2 * (8 * 4 * 0.8))
+    assert(Order(First, First, First, First, First,
+                 Second, Second, Second, Second, Second,
+                 Third, Third, Third, Third,
+                 Forth, Forth, Forth, Forth, Forth,
+                 Fifth, Fifth, Fifth, Fifth).price == 3 * (8 * 5 * 0.75) + 2 * (8 * 4 * 0.8))
   }
 }
