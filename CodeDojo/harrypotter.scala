@@ -24,13 +24,13 @@ case class Bundling(bundles: List[Bundle]) {
   def pack(book: Book): Set[Bundling] = {
     bundles.toSet.filter(!_.contains(book)).map((bundle) => {
       val (left, right) = bundles.span(_ != bundle)
-      Bundling(left ++ right.drop(1) :+ bundle.add(book))
-    }) + Bundling(bundles :+ Bundle(Set(book)))
+      Bundling(bundle.add(book) :: left ++ right.drop(1))
+    }) + Bundling(Bundle(book) :: bundles)
   }
   def packAll(books: List[Book]): Set[Bundling] = {
-    books.foldLeft(Set(this)) { (orders, book) =>
-      val ub = orders.map(_.price).min + Bundle(book).price
-      orders.flatMap(_.pack(book).filter(ub >= _.price))
+    books.foldLeft(Set(this)) { (bundlings, book) =>
+      val ub = bundlings.map(_.price).min + Bundle(book).price
+      bundlings.flatMap(_.pack(book).filter(ub >= _.price))
     }
   }
 }
@@ -40,7 +40,7 @@ case object Bundling {
 }
 
 case class Order(books: Book*) {
-  def price(): Double = Bundling().packAll(books.toList).map(_.price).min
+  val price: Double = Bundling().packAll(books.toList).map(_.price).min
 }
 
 
@@ -86,10 +86,10 @@ class HarryPotterSpec extends Specification {
       Bundling(Bundle(First)).pack(First) must_== Set(Bundling(Bundle(First), Bundle(First)))
     }
     "add the book into one of existing bundles or add new bundle if existing bundles can accept the book" in {
-      Bundling(Bundle(First)).pack(Second) must_== Set(Bundling(Bundle(First, Second)), Bundling(Bundle(First), Bundle(Second)))
+      Bundling(Bundle(First)).pack(Second) must_== Set(Bundling(Bundle(First, Second)), Bundling(Bundle(Second), Bundle(First)))
     }
     "create all promising possibilities" in {
-      Bundling().packAll(List(First, Second)) must_== Set(Bundling(Bundle(First, Second)), Bundling(Bundle(First), Bundle(Second)))
+      Bundling().packAll(List(First, Second)) must_== Set(Bundling(Bundle(First, Second)), Bundling(Bundle(Second), Bundle(First)))
     }
   }
 
