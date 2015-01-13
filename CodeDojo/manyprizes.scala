@@ -3,10 +3,14 @@ package manyprizes
 import org.specs2.mutable._
 
 case class ManyPrizes(n: Int) {
+  //this doesn't provide enough precision
+  def log(base: Int, x: Long):Int = (math.log(x) / math.log(base)).toInt
   def max_losts_for(p: Long): Int = {
     (0 to (n - 1)).map((i: Int) => {
-      (i to (n - 1)) map (math.pow(2, _).toLong) sum
+      (i to (n - 1)).map(math.pow(2, _).toLong).sum
     }).count(_ < p)
+    //val x = math.pow(2, n).toLong - p
+    //if (x == 0) n else (n - log(2, x) - 1)
   }
   def max_number_for_lost(l: Int): Long = {
     math.min(math.pow(2, l + 1).toLong - 2, math.pow(2, n).toLong - 1)
@@ -16,8 +20,9 @@ case class ManyPrizes(n: Int) {
   }
   def min_wins_for(p: Long): Int = {
     (0 to (n - 1)).map((i: Int) => {
-      (0 to i) map (math.pow(2, _).toLong) sum
+      (0 to i).map(math.pow(2, _).toLong).sum
     }).count(_ >= p)
+    //n - log(2, p)
   }
   def max_number_for_win(w: Int): Long = {
     math.pow(2, n).toLong - math.pow(2, w).toLong
@@ -26,6 +31,8 @@ case class ManyPrizes(n: Int) {
     max_number_for_win(min_wins_for(p))
   }
 }
+
+import io.StdIn.readLine
 
 object ManyPrizes {
   def main(args: Array[String]): Unit = {
