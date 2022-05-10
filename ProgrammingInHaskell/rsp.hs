@@ -10,8 +10,7 @@ preyOf Scissors = Paper
 
 winner :: [Handsign] -> Maybe Handsign
 winner xs = case nub xs of
-    [a, b] | preyOf a == b -> Just a
-           | otherwise -> Just b
+    [a, b] -> Just $ if preyOf a == b then a else b
     otherwise -> Nothing
 
 main = do
