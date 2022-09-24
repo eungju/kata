@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 enum Handsign {
     Rock,
     Scissors,
@@ -17,20 +17,16 @@ impl Handsign {
     }
 }
 
-use std::collections::HashSet;
-
 fn winner(hs: &[Handsign]) -> Option<Handsign> {
-    let mut set = HashSet::new();
+    let mut set = Vec::new();
     for h in hs.into_iter() {
-        set.insert(h);
+        if !set.contains(h) {
+            set.push(*h)
+        }
     }
-    if set.len() == 2 {
-        let mut i = set.into_iter();
-        let a = *i.next().unwrap();
-        let b = *i.next().unwrap();
-        Some(if a.prey() == b { a } else { b })
-    } else {
-        None
+    match set.as_slice() {
+        &[a, b] => Some(if a.prey() == b { a } else { b }),
+        _ => None
     }
 }
 
